@@ -1,6 +1,6 @@
-def TsDataProcessor(frame1 = 0, frame2 = 0, frame3 = 0, frame4 = 0, frame5 = 0, frame6 = 0, t = 10):
+def TsDataProcessor(NYSEPrices, frame2 = 0, frame3 = 0, frame4 = 0, frame5 = 0, frame6 = 0, t = 10):
   
-  frames = (frame1, frame2, frame3, frame4, frame5, frame6)
+  frames = (NYSEPrices, frame2, frame3, frame4, frame5, frame6)
   
   specs = pd.DataFrame([])
   
@@ -11,5 +11,5 @@ def TsDataProcessor(frame1 = 0, frame2 = 0, frame3 = 0, frame4 = 0, frame5 = 0, 
   start = specs[0].max()
   end = specs[1].min()
   
-  
+  ##start-end dataset = pd.DataFrame(index = NYSEPrices.index)
   
