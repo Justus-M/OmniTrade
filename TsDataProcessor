@@ -1,15 +1,18 @@
-def TsDataProcessor(NYSEPrices, frame2 = 0, frame3 = 0, frame4 = 0, frame5 = 0, frame6 = 0, t = 10):
-  
-  frames = (NYSEPrices, frame2, frame3, frame4, frame5, frame6)
-  
-  specs = pd.DataFrame([])
-  
-  for frame in frames:
-    if frame !=0:
-      specs.append(pd.DataFrame([[frame.index[0], frame.index[-1]]])
-  
-  start = specs[0].max()
-  end = specs[1].min()
-  
-  ##start-end dataset = pd.DataFrame(index = NYSEPrices.index)
-  
+def TsDataProcessor(NYSEPrices, frame2=0, frame3=0, frame4=0, frame5=0, frame6=0, t=10):
+    frames = (NYSEPrices, frame2, frame3, frame4, frame5, frame6)
+
+    specs = pd.DataFrame([])
+
+    for frame in frames:
+        if frame != 0:
+            specs.append(pd.DataFrame([[frame.index[0], frame.index[-1]]])
+        else:
+            frames.remove(frame)
+
+    start = specs[0].max()
+    end = specs[1].min()
+
+    #fix +t dataset = pd.DataFrame(index = NYSEPrices.index[start+t:end])
+
+    for l in range (0, len()):
+    #fix   dataset["p-"+str(l)] = NYSEPrices["close"][start:end].iloc[l:l+t]
