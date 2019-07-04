@@ -1,4 +1,4 @@
-def TsDataProcessor(NYSEPrices, frame2=pd.DataFrame([]), frame3=pd.DataFrame([]), frame4=pd.DataFrame([]), frame5=pd.DataFrame([]), frame6=pd.DataFra, t=10):
+def TsDataProcessor(NYSEPrices, frame2=pd.DataFrame([]), frame3=pd.DataFrame([]), frame4=pd.DataFrame([]), frame5=pd.DataFrame([]), frame6=pd.DataFrame([]), t=10):
     frames = list([NYSEPrices, frame2, frame3, frame4, frame5, frame6])
 
     specs = pd.DataFrame([])
@@ -12,15 +12,15 @@ def TsDataProcessor(NYSEPrices, frame2=pd.DataFrame([]), frame3=pd.DataFrame([])
     start = np.datetime64(specs[0].max())
     end = np.datetime64(specs[1].min())
 
-    frames[i].index = pd.to_datetime(frames[i].index)
+    frames[0].index = pd.to_datetime(frames[0].index)
 
-    dataset = pd.DataFrame(index = frames[0].loc[start+t:end].index)
+    dataset = pd.DataFrame(index = frames[0].iloc[frames[0].index.get_loc(start)+t:frames[0].index.get_loc(end)+1].index)
 
     for i in range(0, t + 1):
         dataset["p-" + str(i)] = 0
 
-    for i in range(0, len(dataset)-10):
+    for i in range(0, len(dataset)):
         for l in range(0, t + 1):
-            dataset["p-" + str(l)].iloc[dataset.index.get_loc(end) - i] = NYSEPrices[start:end].iloc[-1 - i - l]
+            dataset["p-" + str(l)].iloc[dataset.index.get_loc(end) - i] = frames[0][start:end].iloc[-1 - i - l]
 
     return dataset
