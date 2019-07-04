@@ -7,6 +7,7 @@ def TsDataProcessor(NYSEPrices, frame2=pd.DataFrame([]), frame3=pd.DataFrame([])
         if frames[i].empty:
             del frames[i]
         else:
+            frames[i] = frames[i].copy()
             specs = specs.append(pd.DataFrame([[frames[i].index[0], frames[i].index[-1]]]))
 
     start = np.datetime64(specs[0].max())
