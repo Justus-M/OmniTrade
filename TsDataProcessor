@@ -1,51 +1,49 @@
-def TsDataProcessor(Prices, frame2=pd.DataFrame([]), frame3=pd.DataFrame([]), frame4=pd.DataFrame([]), frame5=pd.DataFrame([]), frame6=pd.DataFrame([]), t=10):
-    frames = list([Prices, frame2, frame3, frame4, frame5, frame6])
+def TsDataProcessor(Prices, *other, t=10):
+    import pandas as pd
+    import numpy as np
 
-    specs = pd.DataFrame([])
-    
+    frames = list([Prices])
+
+    for i in other:
+        frames.append(i)
+
+    daterange = pd.DataFrame([])
+
     print("identifying overlap")
-    
+
     for i in range(len(frames) - 1, -1, -1):
-        if frames[i].empty:
-            del frames[i]
+        if type(frames[i]) != pd.Series and type(frames[i]) != pd.DataFrame:
+            print ("Only data frames and series may be submitted as arguments except for t, not: " + str(type(frames[i])))
+            if type(frames[i]) == pd.Series:
+                frames[i] = frames[i].to_frame()
         else:
-            frames[i] = frames[i].copy()
-            specs = specs.append(pd.DataFrame([[frames[i].index[0], frames[i].index[-1]]]))
-    
-    start = np.datetime64(specs[0].max())
-    end = np.datetime64(specs[1].min())
+            daterange = daterange.append(pd.DataFrame([[frames[i].index[0], frames[i].index[-1]]]))
+
+    start = np.datetime64(daterange[0].max())
+    end = np.datetime64(daterange[1].min())
 
     print("converting indices to datetime format and creating dataset template")
 
-    for i in range(0,len(frames)):
+    for i in range(0, len(frames)):
         frames[i].index = pd.to_datetime(frames[i].index)
-    
-    dataset = pd.DataFrame(index = frames[0].iloc[frames[0].index.get_loc(start)+t:frames[0].index.get_loc(end)+1].index)
 
-    print("creating variables")
+    dataset = frames[0]
 
-    for i in range(0, t + 1):
-        dataset["p-" + str(i)] = 0
+    for i in range(1, len(frames)):
+        for col in frames[i].columns.values:
+            dataset[col] = frames[i][col]
+            #dataset[col].add(frames[i][col])
 
-    for f in range (1, len(frames)):
-        for i in range(0, t + 1):
-            dataset["var"+str(f)+"-"+str(i)] = 0
+    dataset.dropna(inplace=True)
 
-    for i in range(0,5):
-        dataset["day" + str(i)] = 0
-        
+    #check for NaN in date range and report to avoid tainting data quality
+
+
     print("populating day of the week")
-        
-    for i in range(0,len(dataset)):
-        dataset["day"+str(dataset.index[i].dayofweek)].iloc[i] = 1
 
-    print("populating variables")
+    # for i in range(0, 5):
+    #     dataset["day" + str(i)] = 0
+    # for i in range(0, len(dataset)):
+    #     dataset["day" + str(dataset.index[i].dayofweek)].iloc[i] = 1
 
-    for i in range(0, len(dataset)):
-        for l in range(0, t + 1):
-            dataset["p-" + str(l)].iloc[dataset.index.get_loc(end) - i] = frames[0][start:end].iloc[-1 - i - l]
-            
-            for f in range (1, len(frames)):
-               dataset["var"+str(f)+"-"+str(l)].iloc[dataset.index.get_loc(end) - i] = frames[f][start:end].iloc[-1 - i - l]
-
-    return dataset
+    return dataset, frames[i][col]
