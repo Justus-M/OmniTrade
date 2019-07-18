@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import os
 import importlib
@@ -6,9 +5,16 @@ import importlib
 
 os.chdir("/Users/justinmulli/PycharmProjects/Stocks")
 import DataProcessor
+import StockFilter
 importlib.reload(DataProcessor)
 
+
+
 stocks = pd.read_csv("all_stocks_5yr.csv", index_col = "date")
+
+test = StockFilter.StockFilter(stocks, "Name", "close", "volume")
+print(test.head())
+
 apple = stocks[stocks["Name"] == "AAPL"]
 dex = pd.read_csv("sentdex.csv", index_col = "date")
 print(dex.columns.values)
@@ -16,5 +22,3 @@ appledex = dex[dex["symbol"] == "AAPL"]
 appledex = appledex["sentiment_signal"].to_frame()
 
 combined, test = DataProcessor.TsDataProcessor(apple, appledex)
-
-#combined = combined[combined["sentiment_signal"]!=0]
