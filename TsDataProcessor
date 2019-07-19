@@ -36,14 +36,12 @@ def TsDataProcessor(Prices, *other, t=10):
 
     dataset.dropna(inplace=True)
 
-    #check for NaN in date range and report to avoid tainting data quality
+    #check for NaN in date range and report to report tainted data quality
 
 
     print("populating day of the week")
 
-    # for i in range(0, 5):
-    #     dataset["day" + str(i)] = 0
-    # for i in range(0, len(dataset)):
-    #     dataset["day" + str(dataset.index[i].dayofweek)].iloc[i] = 1
+    for i in range(0, 5):
+        dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
 
-    return dataset, frames[i][col]
+    return dataset
