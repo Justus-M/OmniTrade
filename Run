@@ -21,4 +21,5 @@ print(dex.columns.values)
 appledex = dex[dex["symbol"] == "AAPL"]
 appledex = appledex["sentiment_signal"].to_frame()
 
-combined, test = DataProcessor.TsDataProcessor(apple, appledex)
+combined = DataProcessor.TsDataProcessor(apple, appledex)
+
