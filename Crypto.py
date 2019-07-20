@@ -2,33 +2,48 @@ import time
 
 t = time.time()
 import os
-os.chdir("/Users/justinmulli/PycharmProjects/Stocks.py")
+os.chdir("/Users/justusmulli/Downloads/Stocks")
 
 import pandas as pd
-import importlib
+#import importlib
 import DataProcessor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import random
+import numpy as np
 
-importlib.reload(DataProcessor)
+#importlib.reload(DataProcessor)
 
-stocks = pd.read_csv("all_stocks_5yr.csv", index_col = "date", parse_dates=True)
+LTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
+BCH = pd.read_csv("BCH-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
+BTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
+ETH = pd.read_csv("ETH-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
 
-dex = pd.read_csv("sentdex.csv", index_col = "date", parse_dates=True)
+LTC.index = pd.to_datetime(LTC.index)
+BCH.index = pd.to_datetime(BCH.index)
+BTC.index = pd.to_datetime(BTC.index)
+ETH.index = pd.to_datetime(ETH.index)
 
-predict = "AAPL"
+LTC["ticker"] = "LTC"
+BCH["ticker"] = "BCH"
+BTC["ticker"] = "BTC"
+ETH["ticker"] = "ETH"
 
-epochs = 100
+
+predict = "BTC"
+
+epochs = 10
 Batch_size = 32
-ValPercent = 0.2
+ValPercent = 0.05
 
-Main = DataProcessor.StockFilter(stocks, "Name", "close", "volume", target = predict, time = 5)
-Dex = DataProcessor.StockFilter(dex, "symbol", "sentiment_signal")
+Main = DataProcessor.StockFilter(BTC, "close", "volume", tickercol = "ticker", target = predict, time = 5)
+aBCH = DataProcessor.StockFilter(BCH, "close", "volume", tickercol = "ticker")
+aETH = DataProcessor.StockFilter(ETH, "close", "volume", tickercol = "ticker")
+aLTC = DataProcessor.StockFilter(LTC, "close", "volume", tickercol = "ticker")
 
-combined, sequential = DataProcessor.TsDataProcessor(Main, Dex, target = predict, t=30)
+combined, sequential = DataProcessor.TsDataProcessor(Main, aBCH, aETH, aLTC, target = predict, t=30)
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]

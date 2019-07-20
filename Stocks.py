@@ -16,7 +16,7 @@ import random
 importlib.reload(DataProcessor)
 
 stocks = pd.read_csv("all_stocks_5yr.csv", index_col = "date", parse_dates=True)
-
+os.chdir("/Users/justusmulli/Projects/OmniTrade")
 dex = pd.read_csv("sentdex.csv", index_col = "date", parse_dates=True)
 
 predict = "AAPL"
