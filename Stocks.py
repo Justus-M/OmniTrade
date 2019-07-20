@@ -2,21 +2,22 @@ import time
 
 t = time.time()
 import os
-os.chdir("/Users/justinmulli/PycharmProjects/Stocks")
+os.chdir("/Users/justusmulli/Projects/OmniTrade")
 
 import pandas as pd
 import importlib
-import DataProcessor
+import TsDataProcessor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import random
 
-importlib.reload(DataProcessor)
+importlib.reload(TsDataProcessor)
 
+os.chdir("/Users/justusmulli/Data")
 stocks = pd.read_csv("all_stocks_5yr.csv", index_col = "date", parse_dates=True)
-os.chdir("/Users/justusmulli/Projects/OmniTrade")
+
 dex = pd.read_csv("sentdex.csv", index_col = "date", parse_dates=True)
 
 predict = "AAPL"
@@ -25,10 +26,10 @@ epochs = 100
 Batch_size = 32
 ValPercent = 0.2
 
-Main = DataProcessor.StockFilter(stocks, "Name", "close", "volume", target = predict, time = 5)
-Dex = DataProcessor.StockFilter(dex, "symbol", "sentiment_signal")
+Main = TsDataProcessor.StockFilter(stocks, "Name", "close", "volume", target = predict, time = 5)
+Dex = TsDataProcessor.StockFilter(dex, "symbol", "sentiment_signal")
 
-combined, sequential = DataProcessor.TsDataProcessor(Main, Dex, target = predict, t=30)
+combined, sequential = TsDataProcessor.TsDataProcessor(Main, Dex, target = predict, t=30)
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
@@ -54,12 +55,10 @@ validation = buys[:lower]+sells[:lower]
 
 random.shuffle(validation)
 
-train_x, train_y = DataProcessor.split(train)
-val_x, val_y = DataProcessor.split(validation)
+train_x, train_y = TsDataProcessor.split(train)
+val_x, val_y = TsDataProcessor.split(validation)
 
 lower = min(len(val_x)-sum(val_y), sum(val_y))
-
-
 
 print(combined.head())
 

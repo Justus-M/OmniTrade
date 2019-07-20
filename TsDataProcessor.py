@@ -8,8 +8,6 @@ def TsDataProcessor(Prices, *other, target = None, t=10):
     for i in other:
         frames.append(i)
 
-    daterange = pd.DataFrame([])
-
     for i in range(len(frames) - 1, -1, -1):
         if type(frames[i]) != pd.Series and type(frames[i]) != pd.DataFrame:
             print("Only data frames and series may be submitted as arguments for *other, not: " + str(type(frames[i])))
@@ -73,7 +71,8 @@ def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
             if col != target + " close target":
                 filtered[col] = filtered[col].pct_change()
                 filtered.dropna(inplace=True)
-            # filtered[col] = preprocessing.scale(filtered[col].values)
+                filtered[col] = preprocessing.scale(filtered[col].values)
+                filtered.dropna(inplace=True)
     else:
         for col in filtered.columns:
             filtered[col] = preprocessing.scale(filtered[col])
@@ -84,7 +83,6 @@ def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
 
 
 def split(data):
-    import pandas
     import numpy as np
 
     X = []

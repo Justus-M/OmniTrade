@@ -2,11 +2,10 @@ import time
 
 t = time.time()
 import os
-os.chdir("/Users/justusmulli/Downloads/Stocks")
-
+os.chdir("/Users/justusmulli/Projects/OmniTrade")
 import pandas as pd
 #import importlib
-import DataProcessor
+import TsDataProcessor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
@@ -15,7 +14,7 @@ import random
 import numpy as np
 
 #importlib.reload(DataProcessor)
-
+os.chdir("/Users/justusmulli/Data")
 LTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
 BCH = pd.read_csv("BCH-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
 BTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
@@ -35,15 +34,15 @@ ETH["ticker"] = "ETH"
 predict = "BTC"
 
 epochs = 10
-Batch_size = 32
+Batch_size = 64
 ValPercent = 0.05
 
-Main = DataProcessor.StockFilter(BTC, "close", "volume", tickercol = "ticker", target = predict, time = 5)
-aBCH = DataProcessor.StockFilter(BCH, "close", "volume", tickercol = "ticker")
-aETH = DataProcessor.StockFilter(ETH, "close", "volume", tickercol = "ticker")
-aLTC = DataProcessor.StockFilter(LTC, "close", "volume", tickercol = "ticker")
+Main = TsDataProcessor.StockFilter(BTC, "close", "volume", tickercol ="ticker", target = predict, time = 3)
+aBCH = TsDataProcessor.StockFilter(BCH, "close", "volume", tickercol ="ticker")
+aETH = TsDataProcessor.StockFilter(ETH, "close", "volume", tickercol ="ticker")
+aLTC = TsDataProcessor.StockFilter(LTC, "close", "volume", tickercol ="ticker")
 
-combined, sequential = DataProcessor.TsDataProcessor(Main, aBCH, aETH, aLTC, target = predict, t=30)
+combined, sequential = TsDataProcessor.TsDataProcessor(Main, aBCH, aETH, aLTC, target = predict, t=60)
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
@@ -69,8 +68,8 @@ validation = buys[:lower]+sells[:lower]
 
 random.shuffle(validation)
 
-train_x, train_y = DataProcessor.split(train)
-val_x, val_y = DataProcessor.split(validation)
+train_x, train_y = TsDataProcessor.split(train)
+val_x, val_y = TsDataProcessor.split(validation)
 
 lower = min(len(val_x)-sum(val_y), sum(val_y))
 
@@ -105,6 +104,3 @@ Model.compile(loss="sparse_categorical_crossentropy",
               metrics=["accuracy"])
 
 Model.fit(train_x, train_y, epochs = epochs, validation_data=(val_x, val_y))
-
-print(sum("val hits "+ str(val_y)))
-print(sum("train hits" + str(train_y)))
