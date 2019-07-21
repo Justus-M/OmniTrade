@@ -13,36 +13,43 @@ import numpy as np
 
 importlib.reload(TsDataProcessor)
 
+#modifiable parameters
 predict = "BTC"
 epochs = 10
 Batch_size = 64
 ValPercent = 0.05
 hindsight = 60
 foresight = 3
-buy_threshhold= 0
+buy_threshold= 0
 y_name = "close"
 x_names = ["close", "volume"]
+
 
 cryptos = dict.fromkeys(["LTC", "BCH", "BTC", "ETH"])
 
 for i in cryptos:
     cryptos[i] = pd.read_csv("Data/" + i + "-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-    cryptos[i] = cryptos[i][x_names]
-    cryptos[i].columns = i + " " + cryptos[i].columns.values
+    cryptos[i] = cryptos[i][x_names] #only keep relevant columns
+    cryptos[i].columns = i + " " + cryptos[i].columns.values #add crypto name to column headers for later when the datasets are combined
 
+#the below lines calculate the return until the target date determined by "foresight" in the above parameters, and converts it to a 1 or 0 depending on whether
+#or not it is above the buy threshold in the above parameters. Ex. if buy threshold is 0.05 then "target" will be one for a return of 5% or more
 cryptos[predict]["target"] = cryptos[predict][predict + " " + y_name].shift(periods=-foresight) / cryptos[predict][predict + " " + y_name]
-cryptos[predict]["target"] = (cryptos[predict]["target"] > 1 + buy_threshhold).astype(int)
+cryptos[predict]["target"] = (cryptos[predict]["target"] > 1 + buy_threshold).astype(int) #convert to
 cryptos[predict].dropna(inplace=True)
 
 altcrypto = pd.DataFrame()
 
+#this loop scales the data and puts the data of the non-target currencies together in a frame, for the TsDataProcessor function
 for i in cryptos:
     cryptos[i] = TsDataProcessor.Scaler(cryptos[i], "target")
     if i != predict:
         altcrypto[cryptos[i].columns.values] = cryptos[i]
 
+#Returns all the input frames together in one frame as "combined", and an array of training data. see TsDataProcessor for more
 combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
 
+#separates the data into validation and training sets, Valpercent is the proportion of the total data used for validation
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
 
@@ -52,11 +59,15 @@ mark = combined[(combined.index >= valprop)]
 validation = sequential[:len(mark)]
 train = sequential[len(mark):]
 
+#the data is balanced so we have an equal number of buys and sells, otherwise the algorithm
+# can get promising results just by never buying (always predicting 0), or always buying (always predicting 1) depending on the data
 train = TsDataProcessor.Balance(train)
 validation = TsDataProcessor.Balance(validation)
 
+
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
+
 
 Model = Sequential()
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))

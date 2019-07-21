@@ -2,18 +2,20 @@ def TsDataProcessor(Base, *other, target = None, t=10):
     import pandas as pd
     import numpy as np
     from collections import deque
-
+    #first we create a list of all the entered arrays
     frames = list([Base])
 
     for i in other:
         frames.append(i)
 
+    #then we make sure they are really arrays or dataframes, and convert series to frames to avoid errors in later steps
     for i in range(len(frames) - 1, -1, -1):
         if type(frames[i]) != pd.Series and type(frames[i]) != pd.DataFrame:
             print("Only data frames and series may be submitted as arguments for *other, not: " + str(type(frames[i])))
             if type(frames[i]) == pd.Series:
                 frames[i] = frames[i].to_frame()
 
+    #Use the main dataframe containing prediction targets as a base for the combined dataframe, and add the other frames
     dataset = frames[0]
 
     for i in range(1, len(frames)):
@@ -22,16 +24,17 @@ def TsDataProcessor(Base, *other, target = None, t=10):
 
     dataset.dropna(inplace=True)
 
-    # check for NaN in date range and report to report tainted data quality
-
     # for i in range(0, 5):
     #     dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
 
+    #make sure the variable to be predicted is the last column, for later separation
     cols = list(dataset.columns)
     cols.remove(target)
     cols.append(target)
     dataset = dataset[cols]
 
+    #create array to fill with samples. Deque has a maximum length equal to the desired number of past units to use for prediction
+    #When an item is added to a full deque, the first item is removed, so the below loop creates a rolling time window used to populate the data for the nn
     sequential_data = []
     prev_days = deque(maxlen=t)
 
@@ -43,10 +46,10 @@ def TsDataProcessor(Base, *other, target = None, t=10):
     return dataset, sequential_data
 
 
-def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
+def StockFilter(frame, tickercol = None):
 
     import pandas as pd
-    from sklearn import preprocessing
+
     singles = list(dict.fromkeys(frame[tickercol]))
     filtered = pd.DataFrame(index=frame[frame[tickercol] == singles[0]].index)
 
@@ -54,7 +57,7 @@ def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
         for col in filtered.columns.values:
             filtered[ticker + " " + col] = frame[frame[tickercol] == ticker][col]
 
-    filtered.dropna(inplace = True, axis = 1)
+    #filtered.dropna(inplace = True, axis = 1)
 
 def Scaler(frame, target):
     from sklearn import preprocessing
