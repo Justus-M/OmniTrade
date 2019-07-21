@@ -1,48 +1,39 @@
 import time
 
 t = time.time()
-import os
-os.chdir("/Users/justusmulli/Projects/OmniTrade")
 import pandas as pd
-#import importlib
+import importlib
 import TsDataProcessor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import random
 import numpy as np
 
-#importlib.reload(DataProcessor)
-os.chdir("/Users/justusmulli/Data")
-LTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-BCH = pd.read_csv("BCH-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-BTC = pd.read_csv("LTC-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-ETH = pd.read_csv("ETH-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-
-LTC.index = pd.to_datetime(LTC.index)
-BCH.index = pd.to_datetime(BCH.index)
-BTC.index = pd.to_datetime(BTC.index)
-ETH.index = pd.to_datetime(ETH.index)
-
-LTC["ticker"] = "LTC"
-BCH["ticker"] = "BCH"
-BTC["ticker"] = "BTC"
-ETH["ticker"] = "ETH"
-
+importlib.reload(TsDataProcessor)
 
 predict = "BTC"
-
 epochs = 10
 Batch_size = 64
 ValPercent = 0.05
+hindsight = 60
+foresight = 3
 
-Main = TsDataProcessor.StockFilter(BTC, "close", "volume", tickercol ="ticker", target = predict, time = 3)
-aBCH = TsDataProcessor.StockFilter(BCH, "close", "volume", tickercol ="ticker")
-aETH = TsDataProcessor.StockFilter(ETH, "close", "volume", tickercol ="ticker")
-aLTC = TsDataProcessor.StockFilter(LTC, "close", "volume", tickercol ="ticker")
+cryptos = dict.fromkeys(["LTC", "BCH", "BTC", "ETH"])
 
-combined, sequential = TsDataProcessor.TsDataProcessor(Main, aBCH, aETH, aLTC, target = predict, t=60)
+for i in cryptos:
+    cryptos[i] = pd.read_csv("Data/" + i + "-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
+    cryptos[i]["ticker"] = i
+
+    if i == predict:
+        cryptos[i] = TsDataProcessor.StockFilter(cryptos[i], "close", "volume", tickercol="ticker", target=predict, time=foresight)
+    else:
+        cryptos[i] = TsDataProcessor.StockFilter(cryptos[i], "close", "volume", tickercol="ticker")
+
+target = cryptos[predict]
+del cryptos[predict]
+
+combined, sequential = TsDataProcessor.TsDataProcessor(target, cryptos["BCH"], cryptos["ETH"], cryptos["LTC"], target = predict, t=hindsight)
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
@@ -70,14 +61,6 @@ random.shuffle(validation)
 
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
-
-lower = min(len(val_x)-sum(val_y), sum(val_y))
-
-
-
-print(combined.head())
-
-print(time.time() - t)
 
 Model = Sequential()
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "relu", return_sequences = True))
