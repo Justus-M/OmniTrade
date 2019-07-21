@@ -18,22 +18,28 @@ Batch_size = 64
 ValPercent = 0.05
 hindsight = 60
 foresight = 3
+y_name = "close"
+x_names = ["close", "volume"]
 
 cryptos = dict.fromkeys(["LTC", "BCH", "BTC", "ETH"])
 
 for i in cryptos:
     cryptos[i] = pd.read_csv("Data/" + i + "-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
-    cryptos[i]["ticker"] = i
+    cryptos[i] = cryptos[i][x_names]
+    cryptos[i].columns = i + " " + cryptos[i].columns.values
 
-    if i == predict:
-        cryptos[i] = TsDataProcessor.StockFilter(cryptos[i], "close", "volume", tickercol="ticker", target=predict, time=foresight)
-    else:
-        cryptos[i] = TsDataProcessor.StockFilter(cryptos[i], "close", "volume", tickercol="ticker")
+cryptos[predict][predict + " target"] = cryptos[predict][predict + " " + y_name].shift(periods=-foresight) / cryptos[predict][predict + " " + y_name]
+cryptos[predict].dropna(inplace=True)
 
 target = cryptos[predict]
 del cryptos[predict]
 
-combined, sequential = TsDataProcessor.TsDataProcessor(target, cryptos["BCH"], cryptos["ETH"], cryptos["LTC"], target = predict, t=hindsight)
+altcrypto = pd.DataFrame()
+
+for i in cryptos:
+    altcrypto[cryptos[i].columns.values] = cryptos[i]
+
+combined, sequential = TsDataProcessor.TsDataProcessor(target, altcrypto, target = predict, t=hindsight)
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]

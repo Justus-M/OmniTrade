@@ -28,8 +28,8 @@ def TsDataProcessor(Prices, *other, target = None, t=10):
     #     dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
 
     cols = list(dataset.columns)
-    cols.remove(target + " close target")
-    cols.append(target + " close target")
+    cols.remove(target + " target")
+    cols.append(target + " target")
     dataset = dataset[cols]
 
     sequential_data = []
@@ -44,42 +44,28 @@ def TsDataProcessor(Prices, *other, target = None, t=10):
 
 
 def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
+
     import pandas as pd
     from sklearn import preprocessing
     singles = list(dict.fromkeys(frame[tickercol]))
     filtered = pd.DataFrame(index=frame[frame[tickercol] == singles[0]].index)
 
-    if tickercol != None:
-        for ticker in singles:
-            if ticker != "APTV":
-                for col in keep:
-                    filtered[ticker + " " + col] = frame[frame[tickercol] == ticker][col]
-                if ticker == "GOOG":
-                    break
+    for ticker in singles:
+        for col in filtered.columns.values:
+            filtered[ticker + " " + col] = frame[frame[tickercol] == ticker][col]
 
     filtered.dropna(inplace = True, axis = 1)
 
-    if target != None:
-        filtered[target + " close target"] = filtered[target + " close"].shift(periods=-time) / filtered[target + " close"]
-        filtered.dropna(inplace=True)
+def Scaler(frame, target):
 
-    if time != None:
-        filtered[target + " close target"] = (filtered[target + " close target"] > 1.00).astype(int)
+    for col in frame.columns:
+        if col != target:
+            frame[col] = frame[col].pct_change()
+            frame.dropna(inplace=True)
+            frame[col] = preprocessing.scale(frame[col].values)
+            frame.dropna(inplace=True)
 
-    if target != None:
-        for col in filtered.columns:
-            if col != target + " close target":
-                filtered[col] = filtered[col].pct_change()
-                filtered.dropna(inplace=True)
-                filtered[col] = preprocessing.scale(filtered[col].values)
-                filtered.dropna(inplace=True)
-    else:
-        for col in filtered.columns:
-            filtered[col] = preprocessing.scale(filtered[col])
-
-    filtered.dropna(inplace=True)
-
-    return filtered
+    return frame
 
 
 def split(data):
