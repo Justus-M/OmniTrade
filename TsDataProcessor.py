@@ -1,9 +1,9 @@
-def TsDataProcessor(Prices, *other, target = None, t=10):
+def TsDataProcessor(Base, *other, target = None, t=10):
     import pandas as pd
     import numpy as np
     from collections import deque
 
-    frames = list([Prices])
+    frames = list([Base])
 
     for i in other:
         frames.append(i)
@@ -28,8 +28,8 @@ def TsDataProcessor(Prices, *other, target = None, t=10):
     #     dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
 
     cols = list(dataset.columns)
-    cols.remove(target + " target")
-    cols.append(target + " target")
+    cols.remove(target)
+    cols.append(target)
     dataset = dataset[cols]
 
     sequential_data = []
@@ -57,16 +57,41 @@ def StockFilter(frame, *keep, tickercol = None, target = None, time = None):
     filtered.dropna(inplace = True, axis = 1)
 
 def Scaler(frame, target):
+    from sklearn import preprocessing
 
-    for col in frame.columns:
+    for col in frame.columns.values:
         if col != target:
             frame[col] = frame[col].pct_change()
             frame.dropna(inplace=True)
             frame[col] = preprocessing.scale(frame[col].values)
-            frame.dropna(inplace=True)
+
+    frame.dropna(inplace=True)
 
     return frame
 
+def Balance(data):
+
+    import random
+
+    buys = []
+    sells = []
+
+    for seq, target in data:
+        if target == 1:
+            buys.append([seq, target])
+        else:
+            sells.append([seq, target])
+
+    random.shuffle(buys)
+    random.shuffle(sells)
+
+    lower = min(len(buys), len(sells))
+
+    data = buys[:lower] + sells[:lower]
+
+    random.shuffle(data)
+
+    return data
 
 def split(data):
     import numpy as np

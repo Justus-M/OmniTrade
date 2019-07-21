@@ -12,12 +12,13 @@ import numpy as np
 
 importlib.reload(TsDataProcessor)
 
-predict = "BTC"
+predict = "BCH"
 epochs = 10
 Batch_size = 64
 ValPercent = 0.05
 hindsight = 60
 foresight = 3
+buy_threshhold= 0
 y_name = "close"
 x_names = ["close", "volume"]
 
@@ -28,18 +29,20 @@ for i in cryptos:
     cryptos[i] = cryptos[i][x_names]
     cryptos[i].columns = i + " " + cryptos[i].columns.values
 
-cryptos[predict][predict + " target"] = cryptos[predict][predict + " " + y_name].shift(periods=-foresight) / cryptos[predict][predict + " " + y_name]
+cryptos[predict]["target"] = cryptos[predict][predict + " " + y_name].shift(periods=-foresight) / cryptos[predict][predict + " " + y_name]
+cryptos[predict]["target"] = (cryptos[predict]["target"] > 1 + buy_threshhold).astype(int)
 cryptos[predict].dropna(inplace=True)
-
-target = cryptos[predict]
-del cryptos[predict]
 
 altcrypto = pd.DataFrame()
 
 for i in cryptos:
-    altcrypto[cryptos[i].columns.values] = cryptos[i]
+    cryptos[i] = TsDataProcessor.Scaler(cryptos[i], "target")
+    if i != predict:
+        altcrypto[cryptos[i].columns.values] = cryptos[i]
 
-combined, sequential = TsDataProcessor.TsDataProcessor(target, altcrypto, target = predict, t=hindsight)
+combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
+
+
 
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
@@ -47,23 +50,11 @@ valprop = days[-int(ValPercent*len(days))]
 random.shuffle(sequential)
 validation = combined[(combined.index >= valprop)]
 
-validation = sequential[0:len(validation)]
-train = sequential[len(validation):]
+validation = sequential[len(validation):]
+train = sequential[:len(validation)]
 
-buys = []
-sells = []
-
-for seq, target in validation:
-    if target == 1:
-        buys.append([seq, target])
-    else:
-        sells.append([seq, target])
-
-lower = min(len(buys), len(sells))
-
-validation = buys[:lower]+sells[:lower]
-
-random.shuffle(validation)
+validation = TsDataProcessor.Balance(validation)
+train = TsDataProcessor.Balance(train)
 
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
