@@ -6,6 +6,7 @@ import importlib
 import TsDataProcessor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import random
 import numpy as np
@@ -42,33 +43,31 @@ for i in cryptos:
 
 combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
 
-
-
 days = sorted(combined.index.values)
 valprop = days[-int(ValPercent*len(days))]
 
 random.shuffle(sequential)
-validation = combined[(combined.index >= valprop)]
+mark = combined[(combined.index >= valprop)]
 
-validation = sequential[len(validation):]
-train = sequential[:len(validation)]
+validation = sequential[:len(mark)]
+train = sequential[len(mark):]
 
-validation = TsDataProcessor.Balance(validation)
 train = TsDataProcessor.Balance(train)
+validation = TsDataProcessor.Balance(validation)
 
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
 
 Model = Sequential()
-Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "relu", return_sequences = True))
+Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))
 Model.add(Dropout(0.2))
 Model.add(BatchNormalization())
 
-Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "relu", return_sequences = True))
+Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))
 Model.add(Dropout(0.1))
 Model.add(BatchNormalization())
 
-Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "relu"))
+Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh"))
 Model.add(Dropout(0.2))
 Model.add(BatchNormalization())
 
@@ -82,5 +81,15 @@ opt = tf.keras.optimizers.Adam(lr=0.001, decay=1e-6)
 Model.compile(loss="sparse_categorical_crossentropy",
               optimizer=opt,
               metrics=["accuracy"])
+NAME = f"{predict}-{hindsight}-SEQ-{foresight}-PRED-{int(time.time())}"
 
-Model.fit(train_x, train_y, epochs = epochs, validation_data=(val_x, val_y))
+tensorboard = TensorBoard(log_dir="logs/{}".format(NAME))
+
+filepath = "RNN_Final-{epoch:02d}-{val_acc:.3f}"  # unique file name that will include the epoch and the validation acc for that epoch
+checkpoint = ModelCheckpoint("models/{}.model".format(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')) # saves only the best ones
+
+
+
+
+history = Model.fit(train_x, train_y, batch_size = Batch_size,epochs = epochs, validation_data=(val_x, val_y), callbacks = [tensorboard, checkpoint])
+

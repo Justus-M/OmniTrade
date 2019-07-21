@@ -20,6 +20,8 @@ stocks = pd.read_csv("all_stocks_5yr.csv", index_col = "date", parse_dates=True)
 
 dex = pd.read_csv("sentdex.csv", index_col = "date", parse_dates=True)
 
+
+
 predict = "AAPL"
 
 epochs = 100
