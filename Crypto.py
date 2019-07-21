@@ -13,7 +13,7 @@ import numpy as np
 
 importlib.reload(TsDataProcessor)
 
-predict = "BCH"
+predict = "BTC"
 epochs = 10
 Batch_size = 64
 ValPercent = 0.05
@@ -86,6 +86,7 @@ NAME = f"{predict}-{hindsight}-SEQ-{foresight}-PRED-{int(time.time())}"
 tensorboard = TensorBoard(log_dir="logs/{}".format(NAME))
 
 filepath = "RNN_Final-{epoch:02d}-{val_acc:.3f}"  # unique file name that will include the epoch and the validation acc for that epoch
+
 checkpoint = ModelCheckpoint("models/{}.model".format(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')) # saves only the best ones
 
 
