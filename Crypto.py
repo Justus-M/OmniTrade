@@ -16,9 +16,9 @@ import plaidml
 importlib.reload(TsDataProcessor)
 
 #modifiable parameters
-predict = "BTC"
+TargetTicker = "BTC"
 epochs = 10
-Batch_size = 64
+Batch_size = 256
 TestProportion = 0.2
 ValidationProportion = 0.05
 hindsight = 512
@@ -36,34 +36,44 @@ for i in cryptos:
 
 #the below lines calculate the return until the target date determined by "foresight" in the above parameters, and converts it to a 1 or 0 depending on whether
 #or not it is above the buy threshold in the above parameters. Ex. if buy threshold is 0.05 then "target" will be one for a return of 5% or more
-cryptos[predict]["target"] = cryptos[predict][predict + " " + y_name].shift(periods=-foresight) / cryptos[predict][predict + " " + y_name]
-cryptos[predict]["target"] = (cryptos[predict]["target"] > 1 + buy_threshold).astype(int) #convert to
-cryptos[predict].dropna(inplace=True)
-print(cryptos[predict]["target"])
-altcrypto = pd.DataFrame(index = cryptos[predict].index)
+cryptos[TargetTicker]["target"] = cryptos[TargetTicker][TargetTicker + " " + y_name].shift(periods=-foresight) / cryptos[TargetTicker][TargetTicker + " " + y_name]
+cryptos[TargetTicker]["target"] = (cryptos[TargetTicker]["target"] > 1 + buy_threshold).astype(int) #convert to
+cryptos[TargetTicker].dropna(inplace=True)
+altcrypto = pd.DataFrame(index = cryptos[TargetTicker].index)
+
+TargetPrice = pd.DataFrame(cryptos[TargetTicker][TargetTicker + " " + y_name].shift(periods=-foresight))
+Price = pd.DataFrame(cryptos[TargetTicker][TargetTicker + " " + y_name])
+
+TargetPrice.columns.values[0] = "TargetPrice"
+Price.columns.values[0] = "Price"
+
 
 #this loop scales the data and puts the data of the non-target currencies together in a frame, for the TsDataProcessor function
 for i in cryptos:
     cryptos[i] = TsDataProcessor.Scaler(cryptos[i], "target")
-    if i != predict:
+    if i != TargetTicker:
         altcrypto = pd.merge(cryptos[i],altcrypto, how ='inner', left_index=True, right_index=True)
 
 #Returns all the input frames together in one frame as "combined", and an array of training data. see TsDataProcessor for more
-DFrame, AllSequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target ="target", t=hindsight)
+DFrame, AllSequential = TsDataProcessor.TsDataProcessor(cryptos[TargetTicker], altcrypto, target ="target", t=hindsight)
 
 del cryptos
 del altcrypto
 #separates the data into validation and training sets, Valpercent is the proportion of the total data used for validation
 
+DFrame = pd.merge(DFrame, Price, how ='inner', left_index=True, right_index=True)
+DFrame = pd.merge(DFrame, TargetPrice, how ='inner', left_index=True, right_index=True)
+
 days = sorted(DFrame.index.values)
 DayMarker = days[-int(TestProportion * len(days))]
 
-marker = len(DFrame.index.values) - len(DFrame[(DFrame.index >= testprop)])
-TestFrame = DFrame[DFrame.index.values[marker:]]
+marker = len(DFrame.index.values) - len(DFrame[(DFrame.index >= DayMarker)])
+TestFrame = DFrame.iloc[marker:]
 TestSequential = AllSequential[marker:]
 
-TrainFrame = DFrame[DFrame.index.values[:marker]]
+TrainFrame = DFrame.iloc[:marker]
 TrainSequential = AllSequential[:marker]
+TrainFrame.drop(["Price", "TargetPrice"], axis = 1)
 
 del DFrame
 del AllSequential
@@ -76,8 +86,8 @@ random.shuffle(TrainSequential)
 marker = TrainFrame[(TrainFrame.index >= DayMarker)]
 
 
-validation = AllSequential[:len(marker)]
-train = AllSequential[len(marker):]
+validation = TrainSequential[:len(marker)]
+train = TrainSequential[len(marker):]
 
 #the data is balanced so we have an equal number of buys and sells, otherwise the algorithm
 # can get promising results just by never buying (always predicting 0), or always buying (always predicting 1) depending on the data

@@ -23,8 +23,8 @@ def get_trades(ticker, ticker2, start=1522015200000, limit = 5000):
 
 
 def get_last_timestamp(file_path):
-    df = pd.read_csv(file_path, header=0, names=["ID", "MTS", "AMOUNT", "PRICE"])
-    return df['MTS'].max()
+    df = pd.read_csv(file_path, header=0, names=["time", "open", "close", "high", "low", "volume"])
+    return df['time'].max()
 
 def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
     csv_path = r"Data/%s-%s-train.csv" % (ticker, ticker2)
