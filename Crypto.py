@@ -17,12 +17,12 @@ importlib.reload(TsDataProcessor)
 
 #modifiable parameters
 predict = "BTC"
-epochs = 3
-Batch_size = 512
+epochs = 10
+Batch_size = 64
 ValPercent = 0.05
-hindsight = 60
-foresight = 4096
-buy_threshold= 0.00
+hindsight = 512
+foresight = 128
+buy_threshold= 0.02
 y_name = "close"
 x_names = ["close", "volume", "low", "high", "open"]
 
@@ -30,7 +30,7 @@ x_names = ["close", "volume", "low", "high", "open"]
 cryptos = dict.fromkeys(["BTC", "ETH", "LTC"])
 
 for i in cryptos:
-    cryptos[i] = pd.read_csv("Data/" + i + "-USD.csv", names=['time', 'low', 'high', 'open', 'close', 'volume'],index_col = "time", parse_dates=True)
+    cryptos[i] = pd.read_csv("Data/" + i + "-USD-test.csv", names=["time", "open", "close", "high", "low", "volume"],index_col = "time", parse_dates=True)
     cryptos[i] = cryptos[i][x_names] #only keep relevant columns
     cryptos[i].columns = i + " " + cryptos[i].columns.values #add crypto name to column headers for later when the datasets are combined
 
@@ -40,13 +40,13 @@ cryptos[predict]["target"] = cryptos[predict][predict + " " + y_name].shift(peri
 cryptos[predict]["target"] = (cryptos[predict]["target"] > 1 + buy_threshold).astype(int) #convert to
 cryptos[predict].dropna(inplace=True)
 print(cryptos[predict]["target"])
-altcrypto = pd.DataFrame()
+altcrypto = pd.DataFrame(index = cryptos[predict].index)
 
 #this loop scales the data and puts the data of the non-target currencies together in a frame, for the TsDataProcessor function
 for i in cryptos:
     cryptos[i] = TsDataProcessor.Scaler(cryptos[i], "target")
     if i != predict:
-        altcrypto[cryptos[i].columns.values] = cryptos[i]
+        altcrypto = pd.merge(cryptos[i],altcrypto, how='inner', left_index=True, right_index=True)
 
 #Returns all the input frames together in one frame as "combined", and an array of training data. see TsDataProcessor for more
 combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
@@ -59,33 +59,31 @@ random.shuffle(sequential)
 mark = combined[(combined.index >= valprop)]
 
 
-validation = sequential[:int(len(mark)/2)]
-test = sequential[int(len(mark)/2):len(mark)]
+validation = sequential[:len(mark)]
 train = sequential[len(mark):]
+
 
 
 #the data is balanced so we have an equal number of buys and sells, otherwise the algorithm
 # can get promising results just by never buying (always predicting 0), or always buying (always predicting 1) depending on the data
 train = TsDataProcessor.Balance(train)
-test = TsDataProcessor.Balance(test)
 validation = TsDataProcessor.Balance(validation)
 
 train_x, train_y = TsDataProcessor.split(train)
-test_x, test_y = TsDataProcessor.split(test)
 val_x, val_y = TsDataProcessor.split(validation)
-# os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 Model = Sequential()
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))
-Model.add(Dropout(0.2))
+Model.add(Dropout(0.3))
 Model.add(BatchNormalization())
 
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))
-Model.add(Dropout(0.1))
+Model.add(Dropout(0.3))
 Model.add(BatchNormalization())
 
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh"))
-Model.add(Dropout(0.2))
+Model.add(Dropout(0.3))
 Model.add(BatchNormalization())
 
 Model.add(Dense(32, activation="relu"))
@@ -112,4 +110,3 @@ Model.compile(loss="sparse_categorical_crossentropy",
 
 history = Model.fit(train_x, train_y, batch_size = Batch_size,epochs = epochs, validation_data=(val_x, val_y))
 
-Model.evaluate(test_x,test_y)

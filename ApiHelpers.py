@@ -26,7 +26,7 @@ def get_last_timestamp(file_path):
     return df['MTS'].max()
 
 def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
-    csv_path = r"Data/%s-%s-test.csv" % (ticker, ticker2)
+    csv_path = r"Data/%s-%s-train.csv" % (ticker, ticker2)
     end = 1564005600000 # 01/01/2019
     last_timestamp = get_last_timestamp(csv_path) if get_last_timestamp(csv_path) > start else start
     print(str(last_timestamp) + ticker)
@@ -42,7 +42,8 @@ def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
                 wr.writerow(l)
                 last_timestamp = int(l[0])
 
-get_Candles('ETH', 'USD', 1546297200000)
-get_Candles('LTC', 'USD', 1546297200000)
-get_Candles('EOS', 'USD', 1546297200000)
+get_Candles('BTC', 'USD', 1522015200000)
+get_Candles('ETH', 'USD', 1522015200000)
+get_Candles('LTC', 'USD', 1522015200000)
+get_Candles('EOS', 'USD', 1522015200000)
 

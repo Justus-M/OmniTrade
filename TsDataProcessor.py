@@ -63,7 +63,7 @@ def Scaler(frame, target):
 
     for col in frame.columns.values:
         if col != target:
-            # frame[col] = frame[col].pct_change()
+            frame[col] = frame[col].pct_change()
             frame.dropna(inplace=True)
             frame[col] = preprocessing.scale(frame[col].values)
 
