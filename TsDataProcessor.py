@@ -19,8 +19,7 @@ def TsDataProcessor(Base, *other, target = None, t=10):
     dataset = frames[0]
 
     for i in range(1, len(frames)):
-        for col in frames[i].columns.values:
-            dataset[col] = frames[i][col]
+        dataset = pd.merge(dataset,frames[i], how='inner', left_index=True, right_index=True)
 
     dataset.dropna(inplace=True)
 
@@ -64,7 +63,7 @@ def Scaler(frame, target):
 
     for col in frame.columns.values:
         if col != target:
-            frame[col] = frame[col].pct_change()
+            # frame[col] = frame[col].pct_change()
             frame.dropna(inplace=True)
             frame[col] = preprocessing.scale(frame[col].values)
 
