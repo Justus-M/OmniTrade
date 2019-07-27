@@ -86,6 +86,7 @@ validation = TsDataProcessor.Balance(validation)
 
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
+test_x, test_y = TsDataProcessor.split(TestSequential)
 os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 Model = Sequential()
