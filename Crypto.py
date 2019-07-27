@@ -19,6 +19,7 @@ importlib.reload(TsDataProcessor)
 predict = "BTC"
 epochs = 10
 Batch_size = 64
+TestPercent = 0.2
 ValPercent = 0.05
 hindsight = 512
 foresight = 128
@@ -27,10 +28,10 @@ y_name = "close"
 x_names = ["close", "volume", "low", "high", "open"]
 
 
-cryptos = dict.fromkeys(["BTC", "ETH", "LTC"])
+cryptos = dict.fromkeys(["BTC", "ETH", "LTC", "EOS"])
 
 for i in cryptos:
-    cryptos[i] = pd.read_csv("Data/" + i + "-USD-test.csv", names=["time", "open", "close", "high", "low", "volume"],index_col = "time", parse_dates=True)
+    cryptos[i] = pd.read_csv("Data/" + i + "-USD-train.csv", names=["time", "open", "close", "high", "low", "volume"],index_col = "time", parse_dates=True)
     cryptos[i] = cryptos[i][x_names] #only keep relevant columns
     cryptos[i].columns = i + " " + cryptos[i].columns.values #add crypto name to column headers for later when the datasets are combined
 
@@ -52,7 +53,12 @@ for i in cryptos:
 combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
 
 #separates the data into validation and training sets, Valpercent is the proportion of the total data used for validation
+
 days = sorted(combined.index.values)
+testprop = days[-int(TestPercent*len(days))]
+
+#TODO: separate test data out from combined and sequential
+
 valprop = days[-int(ValPercent*len(days))]
 
 random.shuffle(sequential)
