@@ -19,14 +19,13 @@ importlib.reload(TsDataProcessor)
 predict = "BTC"
 epochs = 10
 Batch_size = 64
-TestPercent = 0.2
-ValPercent = 0.05
+TestProportion = 0.2
+ValidationProportion = 0.05
 hindsight = 512
 foresight = 128
 buy_threshold= 0.02
 y_name = "close"
 x_names = ["close", "volume", "low", "high", "open"]
-
 
 cryptos = dict.fromkeys(["BTC", "ETH", "LTC", "EOS"])
 
@@ -47,28 +46,38 @@ altcrypto = pd.DataFrame(index = cryptos[predict].index)
 for i in cryptos:
     cryptos[i] = TsDataProcessor.Scaler(cryptos[i], "target")
     if i != predict:
-        altcrypto = pd.merge(cryptos[i],altcrypto, how='inner', left_index=True, right_index=True)
+        altcrypto = pd.merge(cryptos[i],altcrypto, how ='inner', left_index=True, right_index=True)
 
 #Returns all the input frames together in one frame as "combined", and an array of training data. see TsDataProcessor for more
-combined, sequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target = "target", t=hindsight)
+DFrame, AllSequential = TsDataProcessor.TsDataProcessor(cryptos[predict], altcrypto, target ="target", t=hindsight)
 
+del cryptos
+del altcrypto
 #separates the data into validation and training sets, Valpercent is the proportion of the total data used for validation
 
-days = sorted(combined.index.values)
-testprop = days[-int(TestPercent*len(days))]
+days = sorted(DFrame.index.values)
+DayMarker = days[-int(TestProportion * len(days))]
 
-#TODO: separate test data out from combined and sequential
+marker = len(DFrame.index.values) - len(DFrame[(DFrame.index >= testprop)])
+TestFrame = DFrame[DFrame.index.values[marker:]]
+TestSequential = AllSequential[marker:]
 
-valprop = days[-int(ValPercent*len(days))]
+TrainFrame = DFrame[DFrame.index.values[:marker]]
+TrainSequential = AllSequential[:marker]
 
-random.shuffle(sequential)
-mark = combined[(combined.index >= valprop)]
+del DFrame
+del AllSequential
+
+days = sorted(TrainFrame.index.values)
+
+DayMarker = days[-int(ValidationProportion * len(days))]
+
+random.shuffle(TrainSequential)
+marker = TrainFrame[(TrainFrame.index >= DayMarker)]
 
 
-validation = sequential[:len(mark)]
-train = sequential[len(mark):]
-
-
+validation = AllSequential[:len(marker)]
+train = AllSequential[len(marker):]
 
 #the data is balanced so we have an equal number of buys and sells, otherwise the algorithm
 # can get promising results just by never buying (always predicting 0), or always buying (always predicting 1) depending on the data
