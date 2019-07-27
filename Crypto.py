@@ -9,20 +9,22 @@ from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import random
+import os
 import numpy as np
+import plaidml
 
 importlib.reload(TsDataProcessor)
 
 #modifiable parameters
 predict = "BTC"
 epochs = 10
-Batch_size = 64
+Batch_size = 512
 ValPercent = 0.05
 hindsight = 60
-foresight = 3
-buy_threshold= 0
+foresight = 60
+buy_threshold= 0.00
 y_name = "close"
-x_names = ["close", "volume"]
+x_names = ["close", "volume", "low", "high", "open"]
 
 
 cryptos = dict.fromkeys(["LTC", "BCH", "BTC", "ETH"])
@@ -67,7 +69,7 @@ validation = TsDataProcessor.Balance(validation)
 
 train_x, train_y = TsDataProcessor.split(train)
 val_x, val_y = TsDataProcessor.split(validation)
-
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 Model = Sequential()
 Model.add(LSTM(128, input_shape =(train_x.shape[1:]), activation = "tanh", return_sequences = True))
@@ -87,7 +89,7 @@ Model.add(Dropout(0.2))
 
 Model.add(Dense(2, activation="softmax"))
 
-opt = tf.keras.optimizers.Adam(lr=0.001, decay=1e-6)
+opt = tf.keras.optimizers.Adam(lr=0.001 , decay=1e-6)
 
 Model.compile(loss="sparse_categorical_crossentropy",
               optimizer=opt,
@@ -105,3 +107,4 @@ checkpoint = ModelCheckpoint("models/{}.model".format(filepath, monitor='val_acc
 
 history = Model.fit(train_x, train_y, batch_size = Batch_size,epochs = epochs, validation_data=(val_x, val_y), callbacks = [tensorboard, checkpoint])
 
+history
