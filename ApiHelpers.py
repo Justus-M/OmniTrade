@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 def get_trades(ticker, ticker2, start=1522015200000, limit = 5000):
-    csv_path = r"data/%s-%s-trades.csv" % (ticker, ticker2)
+    csv_path = r"data/trades/%s-%s.csv" % (ticker, ticker2)
     end = 1564005600000 # 01/01/2019
     last_timestamp = get_last_timestamp(csv_path) if get_last_timestamp(csv_path) > start else start
     while last_timestamp < end:
@@ -43,8 +43,7 @@ def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
                 wr.writerow(l)
                 last_timestamp = int(l[0])
 
-get_trades('BTC', 'USD', 1522015200000)
-get_trades('ETH', 'USD', 1522015200000)
-get_trades('LTC', 'USD', 1522015200000)
-get_trades('EOS', 'USD', 1522015200000)
-
+get_trades('BTC', 'USD', 1420066800000)
+get_trades('ETH', 'USD', 1420066800000)
+get_trades('LTC', 'USD', 1420066800000)
+get_trades('EOS', 'USD', 1420066800000)
