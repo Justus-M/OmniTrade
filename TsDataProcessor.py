@@ -19,7 +19,7 @@ def TsDataProcessor(Base, *other, target = None, t=10):
     dataset = frames[0]
 
     for i in range(1, len(frames)):
-        dataset = pd.merge(dataset,frames[i], how='inner', left_index=True, right_index=True)
+        dataset = dataset.merge(frames[i], how='inner', left_index=True, right_index=True)
 
     dataset.dropna(inplace=True)
 
@@ -60,10 +60,14 @@ def StockFilter(frame, tickercol = None):
 
 def Scaler(frame, target):
     from sklearn import preprocessing
+    import numpy as np
 
     for col in frame.columns.values:
-        if col != target:
+        if col == "AMOUNT":
+            frame[col] = preprocessing.scale(frame[col].values)
+        elif col != target:
             frame[col] = frame[col].pct_change()
+            frame = frame.replace([np.inf, -np.inf], np.nan)
             frame.dropna(inplace=True)
             frame[col] = preprocessing.scale(frame[col].values)
 
