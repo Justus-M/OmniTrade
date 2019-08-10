@@ -39,8 +39,6 @@ def ImportCrypto(x_names, y_name, TargetTickers, foresight, hindsight, buy_thres
     TargetPrice.dropna(inplace=True)
     Price.dropna(inplace=True)
 
-    client = MongoClient(‘mongodb: // localhost: 27017’)
-    db = client[‘marketData’]
 
     trades = pd.read_csv("Data/" + TargetTickers[0] + "-USD-trades.csv", names=["ID", "time", "AMOUNT", "PRICE"],index_col = "time", parse_dates=True)
     trades.index = pd.to_datetime(trades.index, unit = 'ms')
