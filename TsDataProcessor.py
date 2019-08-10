@@ -1,7 +1,9 @@
+import pandas as pd
+import numpy as np
+from collections import deque
+import torch
 def TsDataProcessor(Base, *other, target = None, t=10):
-    import pandas as pd
-    import numpy as np
-    from collections import deque
+
     #first we create a list of all the entered arrays
     frames = list([Base])
 
@@ -34,15 +36,8 @@ def TsDataProcessor(Base, *other, target = None, t=10):
 
     #create array to fill with samples. Deque has a maximum length equal to the desired number of past units to use for prediction
     #When an item is added to a full deque, the first item is removed, so the below loop creates a rolling time window used to populate the data for the nn
-    sequential_data = []
-    prev_days = deque(maxlen=t)
 
-    for i in dataset.values:
-        prev_days.append([n for n in i[:-1]])
-        if len(prev_days) == t:
-            sequential_data.append([np.array(prev_days), i[-1]])
-
-    return dataset, sequential_data
+    return dataset
 
 
 def StockFilter(frame, tickercol = None):
@@ -75,39 +70,5 @@ def Scaler(frame, target):
 
     return frame
 
-def Balance(data):
 
-    import random
-
-    buys = []
-    sells = []
-
-    for seq, target in data:
-        if target == 1:
-            buys.append([seq, target])
-        else:
-            sells.append([seq, target])
-
-    random.shuffle(buys)
-    random.shuffle(sells)
-
-    lower = min(len(buys), len(sells))
-
-    data = buys[:lower] + sells[:lower]
-
-    random.shuffle(data)
-
-    return data
-
-def split(data):
-    import numpy as np
-
-    X = []
-    Y = []
-
-    for x, y in data:
-        X.append(x)
-        Y.append(y)
-
-    return np.array(X), Y
 
