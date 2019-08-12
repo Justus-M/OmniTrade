@@ -1,43 +1,29 @@
 import pandas as pd
 import numpy as np
-from collections import deque
-import torch
-def TsDataProcessor(Base, *other, target = None, t=10):
+from sklearn import preprocessing
+import tensorflow as tf
 
-    #first we create a list of all the entered arrays
+
+def TsDataProcessor(Base, *other, t=10):
+
     frames = list([Base])
 
     for i in other:
         frames.append(i)
 
-    #then we make sure they are really arrays or dataframes, and convert series to frames to avoid errors in later steps
     for i in range(len(frames) - 1, -1, -1):
-        if type(frames[i]) != pd.Series and type(frames[i]) != pd.DataFrame:
-            print("Only data frames and series may be submitted as arguments for *other, not: " + str(type(frames[i])))
-            if type(frames[i]) == pd.Series:
-                frames[i] = frames[i].to_frame()
-
-    #Use the main dataframe containing prediction targets as a base for the combined dataframe, and add the other frames
-    dataset = frames[0]
+        if type(frames[i]) == pd.Series:
+            frames[i] = frames[i].to_frame()
 
     for i in range(1, len(frames)):
-        dataset = dataset.merge(frames[i], how='inner', left_index=True, right_index=True)
+        Base = Base.merge(frames[i], how='inner', left_index=True, right_index=True)
 
-    dataset.dropna(inplace=True)
+    Base.dropna(inplace=True)
 
     # for i in range(0, 5):
     #     dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
 
-    #make sure the variable to be predicted is the last column, for later separation
-    cols = list(dataset.columns)
-    cols.remove(target)
-    cols.append(target)
-    dataset = dataset[cols]
-
-    #create array to fill with samples. Deque has a maximum length equal to the desired number of past units to use for prediction
-    #When an item is added to a full deque, the first item is removed, so the below loop creates a rolling time window used to populate the data for the nn
-
-    return dataset
+    return Base
 
 
 def StockFilter(frame, tickercol = None):
@@ -51,16 +37,17 @@ def StockFilter(frame, tickercol = None):
         for col in filtered.columns.values:
             filtered[ticker + " " + col] = frame[frame[tickercol] == ticker][col]
 
-    #filtered.dropna(inplace = True, axis = 1)
+    filtered.dropna(inplace = True, axis = 1)
 
-def Scaler(frame, target):
-    from sklearn import preprocessing
+    return filtered
+
+def Scaler(frame):
     import numpy as np
 
     for col in frame.columns.values:
         if col == "AMOUNT":
             frame[col] = preprocessing.scale(frame[col].values)
-        elif col != target:
+        else:
             frame[col] = frame[col].pct_change()
             frame = frame.replace([np.inf, -np.inf], np.nan)
             frame.dropna(inplace=True)
@@ -70,5 +57,37 @@ def Scaler(frame, target):
 
     return frame
 
+def Tensify(dataframe, p, Y = True):
+    if Y:
+        if p.sell_threshold == None:
+            variables = (tf.constant(dataframe[dataframe.columns.values[:-1]].values), tf.constant(dataframe[dataframe.columns.values[-1]].values))
+        else:
+            variables = (tf.constant(dataframe[dataframe.columns.values[:-3]].values), tf.constant(dataframe[dataframe.columns.values[-3:]].values))
+    else:
+        variables = (tf.constant(dataframe.values))
+    tensor = tf.data.Dataset.from_tensor_slices(variables)
+    tensor = tensor.window(p.hindsight,1,1,True)
+    if Y:
+        if p.sell_threshold == None:
+            tensor = tensor.flat_map(lambda x,y: tf.data.Dataset.zip((x.batch(p.hindsight), y.batch(1))))
+        else:
+            tensor = tensor.flat_map(lambda x,y: tf.data.Dataset.zip((x.batch(p.hindsight), y)))
+    else:
+        tensor = tensor.flat_map(lambda x: tf.data.Dataset.zip(x.batch(p.hindsight)))
+    return tensor
+
+def BalanceTensor(tensor, npos, p):
+
+    if p.sell_threshold != None:
+        positive = tensor.filter(lambda x,y: tf.math.equal(y[2],0))
+        negative = tensor.filter(lambda x,y: tf.math.equal(y[2],1))
+    else:
+        positive = tensor.filter(lambda x,y: tf.math.equal(y[0],1))
+        negative = tensor.filter(lambda x,y: tf.math.equal(y[0],0))
+    negative = negative.shuffle(20000)
+    negative = negative.take(npos)
+    tensor = positive.concatenate(negative)
+    tensor = tensor.shuffle(20000)
+    return tensor
 
 
