@@ -1,7 +1,7 @@
 import pandas as pd
 import TsDataProcessor
 
-def ImportCrypto(p):
+def ImportTimeseries(p):
     frames = dict.fromkeys(p.tickers)
 
     baseindex = pd.read_csv("Data/" + p.tickers[0] + "-USD-train.csv", names=["time", "open", "close", "high", "low", "volume"],index_col = "time", parse_dates=True)
