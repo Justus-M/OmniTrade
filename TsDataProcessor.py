@@ -1,31 +1,3 @@
-import pandas as pd
-import numpy as np
-from sklearn import preprocessing
-import tensorflow as tf
-
-
-def TsDataProcessor(Base, *other, t=10):
-
-    frames = list([Base])
-
-    for i in other:
-        frames.append(i)
-
-    for i in range(len(frames) - 1, -1, -1):
-        if type(frames[i]) == pd.Series:
-            frames[i] = frames[i].to_frame()
-
-    for i in range(1, len(frames)):
-        Base = Base.merge(frames[i], how='inner', left_index=True, right_index=True)
-
-    Base.dropna(inplace=True)
-
-    # for i in range(0, 5):
-    #     dataset["day" + str(i)] = (dataset.index.dayofweek == i).astype(int)
-
-    return Base
-
-
 def StockFilter(frame, tickercol = None):
 
     import pandas as pd
@@ -45,7 +17,7 @@ def Scaler(frame):
     import numpy as np
 
     for col in frame.columns.values:
-        if col == "AMOUNT":
+        if col.endswith("AMOUNT"):
             frame[col] = preprocessing.scale(frame[col].values)
         else:
             frame[col] = frame[col].pct_change()
@@ -59,16 +31,16 @@ def Scaler(frame):
 
 def Tensify(dataframe, p, Y = True):
     if Y:
-        if p.sell_threshold == None:
+        if p.sell_threshold == None and len(p.TargetTickers) == 1:
             variables = (tf.constant(dataframe[dataframe.columns.values[:-1]].values), tf.constant(dataframe[dataframe.columns.values[-1]].values))
         else:
-            variables = (tf.constant(dataframe[dataframe.columns.values[:-3]].values), tf.constant(dataframe[dataframe.columns.values[-3:]].values))
+            variables = (tf.constant(dataframe[dataframe.columns.values[:-p.LabelCount]].values), tf.constant(dataframe[dataframe.columns.values[-p.LabelCount:]].values))
     else:
         variables = (tf.constant(dataframe.values))
     tensor = tf.data.Dataset.from_tensor_slices(variables)
     tensor = tensor.window(p.hindsight,1,1,True)
     if Y:
-        if p.sell_threshold == None:
+        if p.sell_threshold == None and len(p.TargetTickers) == 1:
             tensor = tensor.flat_map(lambda x,y: tf.data.Dataset.zip((x.batch(p.hindsight), y.batch(1))))
         else:
             tensor = tensor.flat_map(lambda x,y: tf.data.Dataset.zip((x.batch(p.hindsight), y)))
@@ -78,12 +50,12 @@ def Tensify(dataframe, p, Y = True):
 
 def BalanceTensor(tensor, npos, p):
 
-    if p.sell_threshold != None:
-        positive = tensor.filter(lambda x,y: tf.math.equal(y[2],0))
-        negative = tensor.filter(lambda x,y: tf.math.equal(y[2],1))
+    if p.sell_threshold != None and len(p.TargetTickers) == 1:
+        positive = tensor.filter(lambda x,y: tf.math.equal(y[-1],0))
+        negative = tensor.filter(lambda x,y: tf.math.equal(y[-1],1))
     else:
-        positive = tensor.filter(lambda x,y: tf.math.equal(y[0],1))
-        negative = tensor.filter(lambda x,y: tf.math.equal(y[0],0))
+        positive = tensor.filter(lambda x,y: tf.math.equal(y[-1],1))
+        negative = tensor.filter(lambda x,y: tf.math.equal(y[-1],0))
     negative = negative.shuffle(20000)
     negative = negative.take(npos)
     tensor = positive.concatenate(negative)

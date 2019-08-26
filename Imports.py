@@ -31,12 +31,14 @@ def ImportTimeseries(p):
 
     del trades
 
-    All["target"] = All[p.TargetTickers[0] + " " + p.y_name].shift(periods=-p.foresight) / All[p.TargetTickers[0] + " " + p.y_name]
-    All["long"] = (All["target"] > 1 + p.buy_threshold).astype(int)
-    if p.sell_threshold != None:
-        All["short"] = (All["target"] > 1 - p.sell_threshold).astype(int)
-        All["none"] = ((All["target"] < 1 + p.buy_threshold) & (All["target"] > 1 - p.sell_threshold)).astype(int)
-    All = All.drop(["target"], axis = 1)
+    for ticker in p.TargetTickers:
+        All["target"] = All[ticker + " " + p.y_name].shift(periods=-p.foresight) / All[ticker + " " + p.y_name]
+        All[ticker +" long"] = (All["target"] > 1 + p.buy_threshold).astype(int)
+        if p.sell_threshold != None:
+            All[ticker +" short"] = (All["target"] < 1 - p.sell_threshold).astype(int)
+        All = All.drop(["target"], axis = 1)
+
+    All["none"] = (All[All.columns.values[-p.LabelCount-1:]].sum(axis = 1) == 0).astype(int)
 
     TargetPrice = pd.DataFrame(index = All.index)
     Price = pd.DataFrame(index = All.index)
@@ -52,12 +54,8 @@ def ImportTimeseries(p):
     TargetPrice.dropna(inplace=True)
     Price.dropna(inplace=True)
 
-    displace = 0
-    if p.sell_threshold == None:
-        displace = 2
-
-    ScaledFeatures = TsDataProcessor.Scaler(All[All.columns.values[:-3+displace]])
-    Labels = All[All.columns.values[-3+displace:]]
+    ScaledFeatures = TsDataProcessor.Scaler(All[All.columns.values[:-p.LabelCount]])
+    Labels = All[All.columns.values[-p.LabelCount:]]
     All = ScaledFeatures.merge(Labels, how='inner', left_index=True, right_index=True)
     All.dropna(inplace=True)
 
