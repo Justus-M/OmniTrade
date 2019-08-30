@@ -44,17 +44,12 @@ def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
                 last_timestamp = int(l[0])
 
 
-def get_daily_stocks(ticker):
+def get_daily_stocks(ticker, key):
     csv_path = r"Data/%s-Daily.csv" % (ticker)
     print(ticker)
-    temp = pd.read_csv('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=4EHUONPLL0MA0NPU&datatype=csv'
-                     % (ticker))
+    temp = pd.read_csv('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s&datatype=csv'
+                     % (ticker, key))
     time.sleep(10)
     temp.to_csv('Data/%s-Daily.csv' % (ticker))
 
-tickers = pd.read_csv('Data/SP500.csv')
-
-for each in list['Symbol']:
-    if not os.path.exists('Data/%s-Daily.csv' % (each)):
-        get_daily_stocks(each)
 
