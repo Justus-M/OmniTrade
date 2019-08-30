@@ -7,7 +7,7 @@ import os
 
 def TrainModel(p):
 
-    Tensor, TestTensor, p = DataPrep.DataPreparation(p)
+    Tensor, TestTensor, test = DataPrep.DataPreparation(p)
     os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
     Model = Sequential()
@@ -44,4 +44,4 @@ def TrainModel(p):
 
     TestPredictions = Model.predict(TestTensor)
 
-    return history, Model, Tensor, TestPredictions
+    return history, Model, Tensor, TestPredictions, test

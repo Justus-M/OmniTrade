@@ -19,7 +19,7 @@ for ticker in tickers['Symbol']:
 
 
 DataRefresh(p)
-history, Model, tensor, TestPredictions = TrainModel(p)
+history, Model, tensor, TestPredictions, test = TrainModel(p)
 
 testing = Model.predict(tensor)
 print(len(testing))
