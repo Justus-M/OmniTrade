@@ -3,7 +3,7 @@ import pandas as pd
 def DataRefresh(p):
     frames = dict.fromkeys(p.tickers)
 
-    baseindex = pd.read_csv('Data/' + p.tickers[0] + '-Daily.csv',header = 0, names=['count', 'time', 'open', 'high', 'low', 'close', 'volume'],index_col = 'time', parse_dates=True)
+    baseindex = pd.read_csv('Data/' + p.TargetTickers[0] + '-Daily.csv',header = 0, names=['count', 'time', 'open', 'high', 'low', 'close', 'volume'],index_col = 'time', parse_dates=True)
     baseindex.index = pd.to_datetime(baseindex.index, unit='D')
     baseindex = baseindex.resample(p.hindsight_interval).mean()
 
@@ -13,7 +13,7 @@ def DataRefresh(p):
     for ticker in p.tickers:
         frame = pd.read_csv('Data/' + ticker + '-Daily.csv',header = 0, names=['count', 'time', 'open', 'close', 'high', 'low', 'volume'],index_col = 'time', parse_dates=True)
         frame = frame[p.x_names] #only keep relevant columns
-        frame.index = pd.to_datetime(frame.index, unit = 'ms')
+        frame.index = pd.to_datetime(frame.index, unit = 'D')
         frame.columns = ticker + ' ' + frame.columns.values
         frame = frame.resample(p.hindsight_interval).mean()
         All = All.merge(frame, how='inner', left_index=True, right_index=True)

@@ -1,7 +1,7 @@
 Prediction = []
 
 for sample in TestPredictions:
-    for i in range(0,3):
+    for i in range(0,p.LabelCount):
         if sample[i] == max(sample):
             Prediction.append(i)
 
