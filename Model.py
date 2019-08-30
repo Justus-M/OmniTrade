@@ -44,4 +44,4 @@ def TrainModel(p):
 
     TestPredictions = Model.predict(TestTensor)
 
-    return history, TestPredictions, Model
+    return history, TestPredictions, Model, tensor

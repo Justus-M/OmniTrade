@@ -43,7 +43,18 @@ def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
                 wr.writerow(l)
                 last_timestamp = int(l[0])
 
-get_trades('BTC', 'USD', 1420066800000)
-get_trades('ETH', 'USD', 1420066800000)
-get_trades('LTC', 'USD', 1420066800000)
-get_trades('EOS', 'USD', 1420066800000)
+
+def get_daily_stocks(ticker):
+    csv_path = r"Data/%s-Daily.csv" % (ticker)
+    print(ticker)
+    temp = pd.read_csv('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=4EHUONPLL0MA0NPU&datatype=csv'
+                     % (ticker))
+    time.sleep(10)
+    temp.to_csv('Data/%s-Daily.csv' % (ticker))
+
+tickers = pd.read_csv('Data/SP500.csv')
+
+for each in list['Symbol']:
+    if not os.path.exists('Data/%s-Daily.csv' % (each)):
+        get_daily_stocks(each)
+
