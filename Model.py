@@ -5,9 +5,8 @@ import tensorflow as tf
 import DataPrep
 import os
 
-def TrainModel(p):
+def TrainModel(p, Tensor):
 
-    Tensor, TestTensor, test = DataPrep.DataPreparation(p)
     os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
     Model = Sequential()
@@ -27,7 +26,7 @@ def TrainModel(p):
     Model.add(Dense(32, activation='relu'))
     Model.add(Dropout(0.2))
 
-    Model.add(Dense(p.LabelCount, activation=p.activation))
+    Model.add(Dense(p['LabelCount'], activation=p['activation']))
 
     opt = tf.keras.optimizers.Adam(lr=0.001 , decay=1e-6)
 
@@ -38,10 +37,8 @@ def TrainModel(p):
     # tensorboard = TensorBoard(log_dir='logs/{}'.format(NAME))
     # filepath = 'RNN_Final-{epoch:02d}-{val_acc:.3f}'  # unique file name that will include the epoch and the validation acc for that epoch
     # checkpoint = ModelCheckpoint('models/{}.model'.format(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')) # saves only the best ones
-    history = Model.fit(Tensor, epochs = p.epochs)
+    history = Model.fit(Tensor, epochs = p['epochs'])
 
     # Model.evaluate(test_x, test_y)
 
-    TestPredictions = Model.predict(TestTensor)
-
-    return history, Model, Tensor, TestPredictions, test
+    return Model

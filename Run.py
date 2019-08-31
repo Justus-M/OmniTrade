@@ -5,7 +5,7 @@ from ApiHelpers import get_daily_stocks
 import pandas as pd
 import os
 import TradeSimulation
-
+import DataPrep
 
 
 # tickers = pd.read_csv('SP500.csv')
@@ -19,13 +19,27 @@ import TradeSimulation
 #             tickers.to_csv('SP500.csv')
 #             os.remove('Data/%s-Daily.csv' % (ticker))
 
+# DataRefresh(p)
 
-DataRefresh(p)
-history, Model, tensor, TestPredictions, test = TrainModel(p)
+DFrame = pd.read_csv('Data/Processed.csv', index_col = 'time', parse_dates=True)
 
-testing = Model.predict(tensor)
-print(len(testing))
+testlength = int(p['TestProportion']*len(DFrame))
+TestFrame = DFrame.iloc[-testlength:]
+DFrame = DFrame.iloc[:-testlength]
 
-TradeSimulation.simulate(p, TestPredictions, test)
+Tensor, DFrame = DataPrep.DataPreparation(p, DFrame)
+print(str((len(DFrame) - sum(DFrame['none']))*2) + ' Training examples')
+del DFrame
 
+TestTensor, TestFrame = DataPrep.DataPreparation(p, TestFrame)
+
+Model = TrainModel(p, Tensor)
+
+TestPredictions = Model.predict(TestTensor)
+# TradeSimulation.simulate(p, TestPredictions, test)
+
+TestPredictions = pd.DataFrame(TestPredictions, index = TestFrame.index)
+headers = [a+b for a, b in zip (p['TargetTickers'], ([' long'] * len(p['TargetTickers'])))]
+headers.append('none')
+TestPredictions.columns = headers
 
