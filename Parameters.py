@@ -12,7 +12,7 @@ for ticker in tickers['Symbol']:
          temp = pd.read_csv('Data/%s-Daily.csv' % (ticker), header=0,
                             names=['count', 'time', 'open', 'high', 'low', 'close', 'volume'])
          temp = pd.to_datetime(temp['time'])
-         if temp.iloc[-1]<pd.to_datetime(datetime(2009, 1, 1)):
+         if temp.iloc[-1]<pd.to_datetime(datetime(2009, 1, 1)) and temp.iloc[1]>pd.to_datetime(datetime(2019, 8, 15)):
              p['tickers'].append(ticker)
 
 p['TargetTickers'] = ['MSFT', 'AAPL', 'CRM', 'IBM']

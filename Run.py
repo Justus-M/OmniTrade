@@ -19,7 +19,7 @@ import DataPrep
 #             tickers.to_csv('SP500.csv')
 #             os.remove('Data/%s-Daily.csv' % (ticker))
 
-# DataRefresh(p)
+DataRefresh(p)
 
 DFrame = pd.read_csv('Data/Processed.csv', index_col = 'time', parse_dates=True)
 
