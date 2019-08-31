@@ -20,13 +20,13 @@ for ticker in tickers['Symbol']:
 p.TargetTickers = ['MSFT', 'AAPL', 'CRM', 'IBM']
 p.epochs = 5
 p.Batch_size = 256
-p.TestProportion = 0.4
+p.TestProportion = 0.2
 p.ValidationProportion = 0.1
 p.hindsight = 64
 p.hindsight_interval= '1D'
 p.foresight = 16
 p.foresight_interval = p.hindsight_interval
-p.buy_threshold= 0.02
+p.buy_threshold= 0.03
 p.sell_threshold= None
 p.y_name = 'close'
 p.x_names = ['close', 'volume', 'low', 'high', 'open']

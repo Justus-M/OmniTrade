@@ -53,3 +53,4 @@ def get_daily_stocks(ticker, key):
     temp.to_csv('Data/%s-Daily.csv' % (ticker))
 
 
+
