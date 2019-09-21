@@ -1,17 +1,26 @@
 import matplotlib.pyplot as plt
 
 def simulate(p, TestPredictions, test):
-    Prediction = []
-    for sample in TestPredictions:
-        for i in range(0,p['LabelCount']):
-            if sample[i] == max(sample):
-                Prediction.append(i)
+
 
     InitialInvestment = 1000
     Investment = InitialInvestment
     count = 0
     profitcount = 0
+    TradeAmount = 10
     portfolio = []
+    Threshold = 0.0
+
+
+    Prediction = []
+    for sample in TestPredictions:
+        NoTrade = 1
+        for i in range(0,p['LabelCount']):
+            if sample[i] == max(sample) and sample[i]>Threshold:
+                Prediction.append(i)
+                NoTrade = 0
+            if i == p['LabelCount']-1 and NoTrade == 1:
+                Prediction.append(i)
 
     for i in range(0,len(Prediction)):
         portfolio.append(Investment)
@@ -19,7 +28,7 @@ def simulate(p, TestPredictions, test):
             ticker = p['TargetTickers'][Prediction[i]]
             FuturePrice = test[ticker + ' TargetPrice'].iloc[i]
             Price = test[ticker + ' Price'].iloc[i]
-            TradeReturn = ((FuturePrice-Price)/Price)*10
+            TradeReturn = ((FuturePrice-Price)/Price)*TradeAmount
             Investment += TradeReturn
             count+=1
             if TradeReturn > 0:
@@ -28,7 +37,7 @@ def simulate(p, TestPredictions, test):
         #     Investment += ((test[p['TargetTickers'][0] + ' Price'].iloc[i] - test[p['TargetTickers'][0] + ' TargetPrice'].iloc[i]) /
         #                    test[p['TargetTickers'][0] + ' Price'].iloc[i]) * 10
         if Investment < 0:
-            print('Bust after ' + str(i) + ' minutes.')
+            print('Bust after ' + str(i) + ' days.')
             break
 
     TotalProfit = Investment-InitialInvestment

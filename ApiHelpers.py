@@ -3,6 +3,8 @@ import csv
 import pandas as pd
 import time
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 
 def get_trades(ticker, ticker2, start=1522015200000, limit = 5000):
@@ -45,12 +47,34 @@ def get_Candles(ticker, ticker2, start=1546297200000, limit = 5000):
 
 
 def get_daily_stocks(ticker, key):
-    csv_path = r"Data/%s-Daily.csv" % (ticker)
     print(ticker)
     temp = pd.read_csv('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s&datatype=csv'
                      % (ticker, key))
     time.sleep(10)
     temp.to_csv('Data/%s-Daily.csv' % (ticker))
 
+def get_daily_adjusted_stocks(ticker, key):
+    print(ticker)
+    temp = pd.read_csv('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=%s&outputsize=full&apikey=%s&datatype=csv'
+                     % (ticker, key))
+    time.sleep(10)
+    temp.to_csv('Data/Adjusted/%s-Daily-Adjusted.csv' % (ticker))
+
+def get_SP500_list():
+    sp = requests.get('https://www.slickcharts.com/sp500')
+    sp = BeautifulSoup(sp.content, 'html.parser')
+
+    SP500 = []
+
+    for each in sp.find_all('a', href=True):
+        if '/symbol/' in each.get('href'):
+            SP500.append(each.get('href').split('/symbol/')[1].upper())
+
+    SP500 = list(dict.fromkeys(SP500))
+
+    return SP500
+
+def Intrinio():
+    key = 'OmM5NzQ5NDAzZjU4MzVmNmY5OWI1Zjc1MTdlNWZlMjk3'
 
 
