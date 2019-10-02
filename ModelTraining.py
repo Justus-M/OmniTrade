@@ -8,14 +8,17 @@ import tensorflow as tf
 import itertools
 import numpy as np
 import pickle
+from tensorflow.keras.models import load_model
 
 def DataPull(p):
 
-    if not os.path.exists('Data/Processed%s.csv' % (p['hindsight_interval'])):
+    if not os.path.exists('Data/Processed%s.csv' % p['hindsight_interval']):
+        print('Running DataPreparation as %s frequency data has not been prepared before' % p['hindsight_interval'])
         DataPreparation(p)
 
     Data = {}
-    Data['DFrame'] = pd.read_csv('Data/Processed%s.csv' % (p['hindsight_interval']), index_col = 'time', parse_dates=True)
+    Data['DFrame'] = pd.read_csv('Data/Processed%s.csv' % (p['hindsight_interval']), index_col = 'timestamp', parse_dates=True)
+    Data['DFrame'] = Data['DFrame'][::-1]
 
     if p['Purpose'] == 'Training' or p['Purpose'] == 'TestPrediction':
         Data['DFrame'], Data['TestFrame'] = TensorPrep.Split(Data['DFrame'], p['TestProportion'])
@@ -97,6 +100,7 @@ def Train(p):
 
     Data = DataPull(p)
 
+
     Models = pd.read_csv('models/Model-trials.csv', index_col = 0)
     Models.dropna(inplace = True)
 
@@ -110,5 +114,56 @@ def Train(p):
 
     return Model, history
 
+def SaveModel(p, Model):
 
+    Specs = {}
+    Specs['TargetTickers'] = str(p['TargetTickers'])
+    Specs['nTickers'] = len(p['tickers'])
+    Specs['Foresight'] = p['foresight']
+    Specs['Findsight'] = p['hindsight']
+    Specs['Interval'] = p['foresight_interval']
+    Specs['HindsightExtension'] = str(p['HindsightExtension'])
+    Specs['HyperParamsID'] = p['HyperParamsID']
 
+    if not os.path.exists('Models/ModelIndex.csv'):
+        Specs['ID'] = 1
+        ModelIndex = pd.DataFrame(Specs, index = 1)
+    else:
+        ModelIndex = pd.read_csv('Models/ModelIndex.csv')
+        Specs['ID'] = max(ModelIndex['ID'])+1
+        Specs = pd.DataFrame(Specs)
+        ModelIndex = ModelIndex.append(Specs)
+
+    Model.save('models/&s.h5' %(str(Specs['ID'])))
+    ModelIndex.to_csv('Models/ModelIndex.csv')
+
+def Predict(p, Tensor):
+
+    p['TargetTickers'].sort()
+
+    if os.path.exists('models/%s-%d-foresight.h5' %(str(p['TargetTickers']), p['foresight'])):
+        print('Loading pre-trained model.')
+        Model = load_model('models/%s-%d-foresight.h5' %(str(p['TargetTickers']), p['foresight']))
+    else:
+        print('No pre-trained model matching requirements. Train model for prediction?')
+        answer = None
+        while answer not in ('y', 'n'):
+            answer = input('y/n: ')
+            if answer == 'y':
+                Model, history = Train(p)
+                SaveModel(p, Model)
+            elif answer == 'n':
+                return
+            else:
+                print("Please enter y or n.")
+
+    Predictions = Model.predict(Tensor)
+    if p['Purpose'] == 'LivePrediction':
+        Predictions = pd.DataFrame(Predictions, index=p['Data']['DFrame'].index)
+    else:
+        Predictions = pd.DataFrame(Predictions, index=p['Data']['TestFrame'].index)
+    headers = [a + b for a, b in zip(p['TargetTickers'], ([' long'] * len(p['TargetTickers'])))]
+    headers.append('none')
+    Predictions.columns = headers
+
+    return Predictions

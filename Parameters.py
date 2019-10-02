@@ -2,30 +2,26 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import ApiHelpers
+import csv
+from CsvEndReader import CsvEndReader
 
 p = dict()
-tickers = ApiHelpers.get_SP500_list()
-p['tickers'] = []
-for ticker in tickers:
-     if os.path.exists('Data/%s-Daily.csv' % (ticker)):
-         temp = pd.read_csv('Data/%s-Daily.csv' % (ticker), header=0,
-                            names=['count', 'time', 'open', 'high', 'low', 'close', 'volume'])
-         temp = pd.to_datetime(temp['time'])
-         if temp.iloc[-1]<pd.to_datetime(datetime(2009, 1, 1)) and temp.iloc[1]>datetime.today()-timedelta(days=14):
-             p['tickers'].append(ticker)
 
-p['TargetTickers'] = ['MSFT']
+p['headers'] = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+p = BuildTickerList(p)
+p['TargetTickers'] = ['AAPL', 'MSFT', 'CRM']
+p['tickers'].sort()
 p['TargetTickers'].sort()
-p['headers'] = ['count', 'time', 'open', 'high', 'low', 'close', 'volume']
 p['epochs'] = 5
 p['Batch_size'] = 256
 p['TestProportion'] = 0.3
 p['ValidationProportion'] = 0.3
-p['hindsight'] = 64
-p['hindsight_interval'] = '1D'
-p['foresight'] = 16
+p['hindsight'] = 512
+p['HindsightExtension'] = None #[1, 2, 3, 4, 8, 16, 32, 64, 128, 256]
+p['hindsight_interval'] = '5T'
+p['foresight'] = 32
 p['foresight_interval'] = p['hindsight_interval']
-p['buy_threshold'] = 0.03
+p['buy_threshold'] = 0.01
 p['sell_threshold'] = None
 p['y_name'] = 'close'
 p['x_names'] = ['close', 'volume', 'low', 'high', 'open']
@@ -42,3 +38,31 @@ else:
     p['activation'] = 'sigmoid'
 
 p['LabelCount'] = len(p['TargetTickers']) * p['displace'] + 1
+
+def BuildTickerList(p):
+
+    tickers = []
+    Exclude = pd.read_csv('Synclog.csv')['NoOverlap']
+
+    for ticker in os.listdir('Data/Minute'):
+        if 'csv' in ticker and ticker.replace('.csv', '') not in Exclude:
+            tickers.append(ticker.replace('.csv', ''))
+
+    startdate = []
+    for ticker in tickers:
+        row1 = pd.read_csv('Data/Minute/%s.csv' % ticker, nrows=1)
+        startdate.append([ticker, row1['timestamp'][0]])
+
+    startdate = pd.DataFrame(startdate, columns=['ticker', 'startdate']).set_index('ticker')
+
+    p['tickers'] = []
+    lateststart = pd.to_datetime(datetime(2009, 1, 1))
+    earliestend = datetime.today() - timedelta(days=7)
+    for ticker in tickers:
+
+        tickerstart = pd.to_datetime(startdate['startdate'].loc[ticker])
+        tickerend = pd.to_datetime(CsvEndReader('Data/Minute/%s.csv' % (ticker), 1).index.values[0])
+
+        if tickerstart < lateststart and tickerend > earliestend:
+            p['tickers'].append(ticker)
+    return p

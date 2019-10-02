@@ -43,7 +43,7 @@ def TrainModel(p, Data):
     # checkpoint = ModelCheckpoint('models/{}.model'.format(filepath, verbose=1, save_best_only=True, mode='max')) # saves only the best ones
 
     if p['Purpose'] == 'Training':
-        history = Model.fit(Data['Tensor'], epochs=p['epochs'], validation_data=Data['ValTensor'], callbacks=[tensorboard])
+        history = Model.fit(Data['Tensor'], epochs=p['epochs'], validation_data=Data['ValidationTensor'], callbacks=[tensorboard])
     else:
         history = Model.fit(Data['Tensor'], epochs=p['epochs'])
 

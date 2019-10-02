@@ -2,11 +2,25 @@ import tensorflow as tf
 import ModelTraining
 import TradeSimulation
 from Parameters import p
-import Prediction
+from matplotlib import pyplot
+import time
 
-p['TargetTickers'] = ['MSFT']
+then = time.time()
+
 p['foresight'] = 16
-p['Purpose'] = 'LivePrediction'
+p['Purpose'] = 'TestPrediction'
+p['HyperParamsID'] = 0
 
 p['Data'] = ModelTraining.DataPull(p)
-Prediction = Prediction.Predict(p, p['Data']['Tensor'])
+print(time.time()-then)
+Prediction = ModelTraining.Predict(p, p['Data']['TestTensor'])
+print(time.time()-then)
+pyplot.plot(Prediction)
+pyplot.legend(Prediction.columns.values)
+
+
+for i in range(0, len(Prediction.columns.values)):
+    if Prediction[Prediction.columns.values[i]].iloc[0] > 0.52:
+        print('Recommending ' + Prediction.columns.values[i])
+
+print(time.time()-then)

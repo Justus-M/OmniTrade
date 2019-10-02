@@ -17,21 +17,41 @@ importlib.reload(DataPrep)
 def Split(Frame, Proportion):
 
     Child_len = int(Proportion * len(Frame))
-    Childframe = Frame.iloc[:Child_len]
+    Childframe = Frame.iloc[:Child_len].copy()
     Frame = Frame.iloc[Child_len:]
 
     return Frame, Childframe
 
+def ExtendHindsight(frame, p):
+
+    Trail = pd.DataFrame(index = frame.index)
+
+    OpenHours = 6.5
+
+    interval = p['hindsight_interval']
+
+    if interval == '1D':
+        multiplier = 1
+    elif 'T' in interval:
+        minutes = int(interval.replace('T',''))
+        perhour = 60/int(minutes)
+        multiplier = perhour*OpenHours
+    elif p['hindsight_interval'] == '1H':
+        multiplier = OpenHours
+    elif p['hindsight_interval'] == '3H':
+        multiplier = OpenHours/3.5
+
+    for ticker in p['TargetTickers']:
+        for weeks in p['HindsightExtension']:
+            Trail[ticker + ' ' + str(p['HindsightExtension']) + ' week hindsight'] = frame[ticker + ' ' + p['y_name']].shift(periods=-weeks*multiplier)
+
+    return Trail
+
 def Scaler(frame):
 
     for col in frame.columns.values:
-        if col.endswith('AMOUNT'):
-            frame[col] = preprocessing.scale(frame[col].values)
-        else:
-            # frame[col] = frame[col].pct_change()
-            frame = frame.replace([np.inf, -np.inf], np.nan)
-            frame.dropna(inplace=True)
-            frame[col] = preprocessing.scale(frame[col].values)
+        frame[col] = preprocessing.scale(frame[col].values)
+
     frame.dropna(inplace=True)
 
     return frame
@@ -50,19 +70,30 @@ def Tensify(dataframe, p, Y = True):
         tensor = tensor.flat_map(lambda x: tf.data.Dataset.zip(x.batch(p['hindsight'])))
     return tensor
 
-def BalanceTensor(tensor, npos, p):
+def BalanceTensor(tensor, npos, reduce):
 
     positive = tensor.filter(lambda x,y: tf.math.equal(y[-1],0))
     negative = tensor.filter(lambda x,y: tf.math.equal(y[-1],1))
-    negative = negative.shuffle(20000)
+
+    if reduce == 'Negative:'
+        negative = negative.shuffle(10000)
+    else:
+        positive = positive.shuffle(10000)
+
     negative = negative.take(npos)
-    positive = positive.shuffle(20000)
     positive = positive.take(npos)
     tensor = positive.concatenate(negative)
-    tensor = tensor.shuffle(20000)
+    tensor = tensor.shuffle(10000)
     return tensor
 
 def TensorPreparation(p, DFrame, RealizedPredictions = True, Balance = True):
+
+    then = time.time()
+
+    if not p['HindsightExtension'] == None:
+        Trail = ExtendHindsight(DFrame, p)
+        DFrame = DFrame.merge(Trail, how='inner', left_index=True, right_index=True)
+    print(str(time.time() - then) + ' 1')
 
     if RealizedPredictions:
 
@@ -78,26 +109,50 @@ def TensorPreparation(p, DFrame, RealizedPredictions = True, Balance = True):
             if p['sell_threshold'] != None:
                 DFrame[ticker +' short'] = (Return < 1 - p['sell_threshold']).astype(int)
 
+        print(str(time.time() - then) + ' 2')
+
         DFrame['none'] = (DFrame[DFrame.columns.values[-(p['LabelCount']-1):]].sum(axis = 1) == 0).astype(int)
 
-        ScaledFeatures = Scaler(DFrame[DFrame.columns.values[:-p['LabelCount']]])
-        Labels = DFrame[DFrame.columns.values[-p['LabelCount']:]]
+        print(str(time.time() - then) + ' 3')
 
-        DFrame = ScaledFeatures.merge(Labels, how='inner', left_index=True, right_index=True)
+        Labels = DFrame[DFrame.columns.values[-p['LabelCount']:]]
+        Xvariables = DFrame[DFrame.columns.values[:-p['LabelCount']]]
+        del DFrame
+
+        Xvariables = Scaler(Xvariables)
+        print(str(time.time() - then) + ' 4')
+
+        DFrame = Xvariables.merge(Labels, how='inner', left_index=True, right_index=True)
+        del Xvariables
         DFrame = DFrame.merge(Price, how='inner', left_index=True, right_index=True)
         DFrame = DFrame.merge(TargetPrice, how='inner', left_index=True, right_index=True)
+        del Price
+        del TargetPrice
+
+        print(str(time.time() - then) + ' 5')
 
         DFrame.dropna(inplace=True)
 
         tensor = Tensify(DFrame[DFrame.columns.values[:-(len(p['TargetTickers']) * 2)]], p)
 
+        print(str(time.time() - then) + ' 6')
+
         if Balance:
-            tensor = BalanceTensor(tensor, min(len(DFrame) - sum(DFrame['none']), sum(DFrame['none'])), p)
+            lowest = [min(len(DFrame) - sum(DFrame['none']), sum(DFrame['none']))]
+
+            if lowest == sum(DFrame['none']):
+                reduce = 'Negative'
+            else:
+                reduce = 'Positive'
+
+            tensor = BalanceTensor(tensor, lowest, reduce)
     else:
         DFrame = Scaler(DFrame)
         tensor = Tensify(DFrame, p, Y = False)
 
     tensor = tensor.batch(p['Batch_size']).prefetch(1)
+
+    print(str(time.time() - then) + ' 7')
 
     DFrame = DFrame.iloc[:-p['hindsight']+1]
 
