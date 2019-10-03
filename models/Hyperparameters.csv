@@ -1,0 +1,5 @@
+MainLSTMlayers,MainLSTMNodes,MainLSTMDropout,FinalLSTMNodes,FinalLSTMDropout,FinalDenseNodes,FinalDenseDropout,LearningRate,Decay
+2,32,0.15,32,0.15,32,0.15,0.0001,0.0000001
+3,64,0.25,64,0.25,64,0.2,0.0003,0.0000003
+4,128,0.3,128,0.3,128,0.25,0.001,0.000001
+5,256,0.4,256,0.4,256,0.3,0.003,0.000003
