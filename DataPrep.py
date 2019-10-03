@@ -2,7 +2,7 @@ import pandas as pd
 import time
 import os
 import csv
-from CsvEndReader import CsvEndReader
+from Helpers import CsvEndReader
 
 def DataPreparation(p):
 
@@ -77,6 +77,8 @@ def DataUpdate(p):
             tickerupdate.columns = ticker + ' ' + tickerupdate.columns.values
             tickerupdate = tickerupdate.astype(float)
             tickerupdate = tickerupdate.resample(p['hindsight_interval']).mean()
+            if len(tickerupdate)<100:
+                print(ticker)
             if ticker == p['tickers'][0]:
                 update = tickerupdate
             else:

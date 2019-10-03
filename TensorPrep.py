@@ -75,15 +75,15 @@ def BalanceTensor(tensor, npos, reduce):
     positive = tensor.filter(lambda x,y: tf.math.equal(y[-1],0))
     negative = tensor.filter(lambda x,y: tf.math.equal(y[-1],1))
 
-    if reduce == 'Negative:'
-        negative = negative.shuffle(10000)
+    if reduce == 'Negative':
+        negative = negative.shuffle(20000)
     else:
-        positive = positive.shuffle(10000)
+        positive = positive.shuffle(20000)
 
     negative = negative.take(npos)
     positive = positive.take(npos)
     tensor = positive.concatenate(negative)
-    tensor = tensor.shuffle(10000)
+    tensor = tensor.shuffle(20000)
     return tensor
 
 def TensorPreparation(p, DFrame, RealizedPredictions = True, Balance = True):
@@ -115,8 +115,8 @@ def TensorPreparation(p, DFrame, RealizedPredictions = True, Balance = True):
 
         print(str(time.time() - then) + ' 3')
 
-        Labels = DFrame[DFrame.columns.values[-p['LabelCount']:]]
-        Xvariables = DFrame[DFrame.columns.values[:-p['LabelCount']]]
+        Labels = DFrame[DFrame.columns.values[-p['LabelCount']:]].copy()
+        Xvariables = DFrame[DFrame.columns.values[:-p['LabelCount']]].copy()
         del DFrame
 
         Xvariables = Scaler(Xvariables)
@@ -138,7 +138,7 @@ def TensorPreparation(p, DFrame, RealizedPredictions = True, Balance = True):
         print(str(time.time() - then) + ' 6')
 
         if Balance:
-            lowest = [min(len(DFrame) - sum(DFrame['none']), sum(DFrame['none']))]
+            lowest = min(len(DFrame) - sum(DFrame['none']), sum(DFrame['none']))
 
             if lowest == sum(DFrame['none']):
                 reduce = 'Negative'

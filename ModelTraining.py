@@ -13,21 +13,22 @@ from tensorflow.keras.models import load_model
 def DataPull(p):
 
     if not os.path.exists('Data/Processed%s.csv' % p['hindsight_interval']):
-        print('Running DataPreparation as %s frequency data has not been prepared before' % p['hindsight_interval'])
+        print('Running DataPreparation as %s frequency prepared data was not found' % p['hindsight_interval'])
         DataPreparation(p)
 
     Data = {}
     Data['DFrame'] = pd.read_csv('Data/Processed%s.csv' % (p['hindsight_interval']), index_col = 'timestamp', parse_dates=True)
-    Data['DFrame'] = Data['DFrame'][::-1]
+    Data['DFrame'] = Data['DFrame'][75000:][::-1]
 
-    if p['Purpose'] == 'Training' or p['Purpose'] == 'TestPrediction':
+    if p['Purpose'] == 'TestPrediction':
         Data['DFrame'], Data['TestFrame'] = TensorPrep.Split(Data['DFrame'], p['TestProportion'])
         Data['TestTensor'], Data['TestFrame'] = TensorPrep.TensorPreparation(p, Data['TestFrame'], Balance=False)
+        Data['Tensor'], Data['DFrame'] = TensorPrep.TensorPreparation(p, Data['DFrame'])
+        return Data
 
-        if p['Purpose'] == 'Training':
-            Data['DFrame'], Data['ValidationFrame'] = TensorPrep.Split(Data['DFrame'], p['ValidationProportion'])
-            Data['ValidationTensor'], Data['ValidationFrame'] = TensorPrep.TensorPreparation(p, Data['ValidationFrame'])
-
+    if p['Purpose'] == 'Training':
+        Data['DFrame'], Data['ValidationFrame'] = TensorPrep.Split(Data['DFrame'], p['ValidationProportion'])
+        Data['ValidationTensor'], Data['ValidationFrame'] = TensorPrep.TensorPreparation(p, Data['ValidationFrame'])
         Data['Tensor'], Data['DFrame'] = TensorPrep.TensorPreparation(p, Data['DFrame'])
         return Data
 

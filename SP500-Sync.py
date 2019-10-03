@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, time
 import time as t
 import ApiHelpers
 import pytz
-from CsvEndReader import CsvEndReader
+from Helpers import CsvEndReader
 
 
 
@@ -16,7 +16,7 @@ def Main():
     tz = pytz.timezone('America/New_York')
     now = datetime.now(tz)
     EOD = datetime(now.year, now.month, now.day, 16, 00).replace(tzinfo=tz)
-    LastOpen = LastOpen(EOD, now)
+    LastOpen = GetLastOpen(EOD, now)
 
     log = {'NoOverlap':[], 'timestamp':[], 'Missing':[]}
 
@@ -67,7 +67,8 @@ def Main():
     log = pd.DataFrame({k: pd.Series(l) for k, l in log.items()})
     log.to_csv('SyncLog.csv') #save log of unsuccesful updates for manual intervention/investigation
 
-def lastopen(EOD, now):
+def GetLastOpen(EOD, now):
+
     if now.time() > time(16, 00, 00) or now.time() < time(9, 00, 00) or now.weekday() > 4:
         MarketClosed = True
     else:
@@ -89,4 +90,5 @@ def lastopen(EOD, now):
     return LastOpen
 
 if __name__ == '__main__':
+
     Main()

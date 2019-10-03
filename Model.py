@@ -37,10 +37,6 @@ def TrainModel(p, Data):
         f'-FinalDenseNodes-{p["Hp"]["FinalDenseDropout"]}-FinalDenseDropout-{p["Hp"]["LearningRate"]}-LearningRate-{p["Hp"]["Decay"]}-Decay'
 
     tensorboard = TensorBoard(log_dir='logs/{}'.format(NAME))
-    # filepath = f'RNN_Final-{epoch:02d}'  # unique file name that will include the epoch and the validation acc for that epoch
-    # filepath = f'RNN_Final-{epoch:02d}-{val_acc:.3f}'  # unique file name that will include the epoch and the validation acc for that epoch
-
-    # checkpoint = ModelCheckpoint('models/{}.model'.format(filepath, verbose=1, save_best_only=True, mode='max')) # saves only the best ones
 
     if p['Purpose'] == 'Training':
         history = Model.fit(Data['Tensor'], epochs=p['epochs'], validation_data=Data['ValidationTensor'], callbacks=[tensorboard])
