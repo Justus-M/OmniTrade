@@ -67,5 +67,6 @@ def BuildTickerList(p):
 
         if tickerstart < lateststart and tickerend > earliestend:
             p['tickers'].append(ticker)
+
     return p
 
