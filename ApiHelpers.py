@@ -83,6 +83,7 @@ def Intrinio():
 
 def get_minute_stocks(ticker, key, outputsize = 'full'):
     stamps = []
+    minutes = 0
     try:
         minutes = requests.get('https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=1min&outputsize=%s&apikey=%s'
                      % (ticker, outputsize, key)).json()

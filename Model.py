@@ -1,5 +1,5 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
+from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization, CuDNNLSTM
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import TensorPrep
@@ -7,7 +7,7 @@ import os
 
 def TrainModel(p, Data):
 
-    os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
+    # os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
     Model = Sequential()
 
@@ -17,7 +17,7 @@ def TrainModel(p, Data):
         Model.add(BatchNormalization())
 
 
-    Model.add(LSTM(p['Hp']['FinalLSTMNodes'], activation = 'tanh'))
+    Model.add(CuDNNLSTM(p['Hp']['FinalLSTMNodes'], activation = 'tanh'))
     Model.add(Dropout(p['Hp']['FinalLSTMDropout']))
     Model.add(BatchNormalization())
 

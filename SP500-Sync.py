@@ -38,7 +38,7 @@ def Main():
             continue
 
         else:
-            t.sleep(max(0, 10 - (t.time() - requestlimiter))) #limit API requests to every 10 seconds to prevent block
+            t.sleep(max(0, 11 - (t.time() - requestlimiter))) #limit API requests to every 10 seconds to prevent block
             minutes, stamps = ApiHelpers.get_minute_stocks(ticker, AlphaVantageKey, outputsize='full')
             requestlimiter = t.time()
 

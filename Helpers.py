@@ -46,13 +46,13 @@ def BuildTickerList(p):
     tickers = []
     Exclude = list(pd.read_csv('SyncLog.csv')['NoOverlap'])
 
-    for ticker in os.listdir('Data/Minute'):
+    for ticker in os.listdir('/Data/Minute'):
         if 'csv' in ticker and ticker.replace('.csv', '') not in Exclude:
             tickers.append(ticker.replace('.csv', ''))
 
     startdate = []
     for ticker in tickers:
-        row1 = pd.read_csv('Data/Minute/%s.csv' % ticker, nrows=1)
+        row1 = pd.read_csv('/Data/Minute/%s.csv' % ticker, nrows=1)
         startdate.append([ticker, row1['timestamp'][0]])
 
     startdate = pd.DataFrame(startdate, columns=['ticker', 'startdate']).set_index('ticker')
@@ -63,7 +63,7 @@ def BuildTickerList(p):
     for ticker in tickers:
 
         tickerstart = pd.to_datetime(startdate['startdate'].loc[ticker])
-        tickerend = pd.to_datetime(CsvEndReader('Data/Minute/%s.csv' % (ticker), 1).index.values[0])
+        tickerend = pd.to_datetime(CsvEndReader('/Data/Minute/%s.csv' % (ticker), 1).index.values[0])
 
         if tickerstart < lateststart and tickerend > earliestend:
             p['tickers'].append(ticker)

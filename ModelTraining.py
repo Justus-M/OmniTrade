@@ -12,12 +12,12 @@ from tensorflow.keras.models import load_model
 
 def DataPull(p):
 
-    if not os.path.exists('Data/Processed%s.csv' % p['hindsight_interval']):
+    if not os.path.exists('/Data/Processed%s.csv' % p['hindsight_interval']):
         print('Running DataPreparation as %s frequency prepared data was not found' % p['hindsight_interval'])
         DataPreparation(p)
 
     Data = {}
-    Data['DFrame'] = pd.read_csv('Data/Processed%s.csv' % (p['hindsight_interval']), index_col = 'timestamp', parse_dates=True)
+    Data['DFrame'] = pd.read_csv('/Data/Processed%s.csv' % (p['hindsight_interval']), index_col = 'timestamp', parse_dates=True)
     Data['DFrame'] = Data['DFrame'][75000:][::-1]
 
     if p['Purpose'] == 'TestPrediction':
