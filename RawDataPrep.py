@@ -15,6 +15,8 @@ def DataPreparation(p):
 
     Batch = pd.DataFrame(index = baseindex.index)
 
+    del baseindex
+
     count = 0
     batches = []
 
@@ -66,7 +68,7 @@ def DataUpdate(p):
 
         update = pd.DataFrame()
         for ticker in p['tickers']:
-            tickerupdate = CsvEndReader('Data/Minute/%s.csv' % ticker, 1500)
+            tickerupdate = CsvEndReader('Data/Minute/%s.csv' % ticker, 10000)
             try:
                 cutoff = tickerupdate.index.get_loc(lastminute)
             except:
