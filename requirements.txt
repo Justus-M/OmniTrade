@@ -11,12 +11,7 @@ chardet==3.0.4
 click==6.7
 clint==0.5.1
 cycler==0.10.0
-dask==2.5.0
 enum34==1.1.6
-fake-useragent==0.1.11
-Flask==1.1.1
-Flask-RESTful==0.3.7
-floyd-cli==0.11.17
 gast==0.2.2
 google-pasta==0.1.7
 grpcio==1.23.0
@@ -32,7 +27,6 @@ macholib==1.5.1
 Markdown==3.1.1
 MarkupSafe==1.1.1
 marshmallow==2.20.5
-matplotlib==3.1.1
 modulegraph==0.10.4
 numpy==1.16.4
 oauthlib==3.1.0

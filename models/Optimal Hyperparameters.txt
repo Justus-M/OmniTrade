@@ -1,1 +1,1 @@
-{'MainLSTMlayers': 2, 'MainLSTMNodes': 128, 'MainLSTMDropout': 0.4, 'FinalLSTMNodes': 128, 'FinalLSTMDropout': 0.4, 'FinalDenseNodes': 32, 'FinalDenseDropout': 0.3, 'LearningRate': 0.001, 'Decay': 1e-6}
+{'MainLSTMlayers': 1, 'MainLSTMNodes': 8, 'MainLSTMDropout': 0.4, 'FinalLSTMNodes': 8, 'FinalLSTMDropout': 0.4, 'FinalDenseNodes': 8, 'FinalDenseDropout': 0.4, 'LearningRate': 0.001, 'Decay': 1e-06}

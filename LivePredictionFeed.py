@@ -16,32 +16,35 @@ AlphaVantageKey = '4EHUONPLL0MA0NPU'
 tz = pytz.timezone('America/New_York')
 p['Purpose'] = 'LivePrediction'
 
-while MarketOpen:
-    now = datetime.now(tz)
-    EOD = datetime(now.year, now.month, now.day, 16, 00).replace(tzinfo=tz)
+if __name__ == '__main__':
 
-    LastOpen = SP500Sync.GetLastOpen(EOD, now)
+    while MarketOpen:
+        now = datetime.now(tz)
+        EOD = datetime(now.year, now.month, now.day, 16, 00).replace(tzinfo=tz)
 
-    Model = load_model('models/1.h5')
+        LastOpen = SP500Sync.GetLastOpen(EOD, now)
 
-    data = get_minute_data(ticker, AlphaVantageKey)
+        Model = load_model('models/1.h5')
 
-    columns = ticker + ' ' + frame.columns.values
+        data = get_minute_data(ticker, AlphaVantageKey)
 
-    Tensor = TensorPreparation(p, data, RealizedPredictions = False, Balance = False)
+        columns = ticker + ' ' + frame.columns.values
 
-    Prediction = Model.predict(Tensor)
+        Tensor = TensorPreparation(p, data, RealizedPredictions = False, Balance = False)
 
-    print(now)
-    if Prediction[0][0]>Prediction[0][1]:
-        print('Recommendation to buy ' + ticker)
-    else:
-        print('Recommendation not to buy ' + ticker)
+        Prediction = Model.predict(Tensor)
 
-    if LastOpen != now:
-        print("Market Closed")
-        break
+        print(now)
+        if Prediction[0][0]>Prediction[0][1]:
+            print('Recommendation to buy ' + ticker)
+        else:
+            print('Recommendation not to buy ' + ticker)
 
-    time.sleep(300)
+
+        if LastOpen != now:
+            print("Market Closed")
+            break
+
+        time.sleep(300)
 
 
