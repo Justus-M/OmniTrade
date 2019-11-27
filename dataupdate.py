@@ -5,16 +5,17 @@ import time as t
 from apihelpers import get_minute_data
 import pytz
 from Helpers import csv_end_reader
-import requests
+from keys import my_alpha_vantage_key
+
 tz = pytz.timezone('America/New_York')
 
 def alphavantage_update(tickers = []):
 
-    alpha_vantage_key = '4EHUONPLL0MA0NPU'
+    alpha_vantage_key = my_alpha_vantage_key
 
     last_open, EOD, now = last_market_open()
 
-    log = {'NoOverlap':[], 'timestamp':[]}
+    log = {'no_overlap':[], 'timestamp':[]}
 
     up_to_date = 0 #count tickers which are already up to date
     request_limiter = 0 #used to track time since last request to limit requests per minute
@@ -53,28 +54,7 @@ def alphavantage_update(tickers = []):
 
     print(str(up_to_date) + ' tickers already up to date.')
     log = pd.DataFrame({k: pd.Series(l) for k, l in log.items()})
-    log.to_csv('SyncLog.csv') #save log of unsuccesful updates for manual intervention/investigation
-
-def iex():
-    tickers = []
-    for ticker in os.listdir('Data/Iso'):  # build list of tickers
-        if 'csv' in ticker:
-            tickers.append(ticker.replace('.csv', ''))
-    for ticker in os.listdir('Data/iex'):  # build list of tickers
-        if 'csv' in ticker:
-            if ticker.replace('.csv', '') in tickers:
-                tickers.remove(ticker.replace('.csv', ''))
-
-    for ticker in tickers:
-        try:
-            re = requests.get('https://cloud.iexapis.com/stable/stock/%s/chart/5dm?token=sk_f9b67e6efa7c42fea5d1d03db48d92cc' % ticker)
-            frame = pd.read_json(re.content)
-            frame['timestamp'] = frame['date'].apply(str).replace('00:00:00', '', regex=True) + frame['minute'] + ':00'
-            frame.set_index('timestamp', inplace=True)
-            frame = frame[['open', 'high', 'low', 'close', 'volume', 'numberOfTrades']]
-            frame.to_csv('Data/iex/%s.csv' % ticker)
-        except:
-            print(ticker + 'failed')
+    log.to_csv('sync_log.csv') #save log of unsuccesful updates for manual intervention/investigation
 
 def last_market_open():
 
@@ -105,13 +85,12 @@ if __name__ == '__main__':
 
     while True:
         LastOpen, EOD, now = last_market_open()
-        # iex()
 
         while LastOpen == now:
             t.sleep(3600)
             LastOpen, EOD, now = last_market_open()
 
-        Main()
+        alphavantage_update()
         LastOpen, EOD, now = last_market_open()
 
         while LastOpen != now:
