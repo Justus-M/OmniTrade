@@ -60,8 +60,7 @@ def train(training_data = False, omni_params = False):
 
         with open('models/Optimal Hyperparameters.txt') as hyperparameters:
             omni_params['hyperparams'] = eval(hyperparameters.read())
-    else:
-        hyperparameters = omni_params['hyperparams']
+
 
     omni_params['layers'] = define_layers(omni_params['hyperparams'])
 
