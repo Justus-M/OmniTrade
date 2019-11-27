@@ -33,7 +33,7 @@ def get_SP500_list():
 
     return SP500
 
-def get_minute_data(ticker, key, outputsize = 'full'):
+def get_minute_data(ticker, key):
 
 
     try:

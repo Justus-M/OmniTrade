@@ -3,7 +3,6 @@ import os
 import csv
 import pandas as pd
 import io
-from datetime import datetime, timedelta
 
 
 def reversed_lines(file):
@@ -28,7 +27,7 @@ def reversed_blocks(file, blocksize=4096):
         file.seek(here, os.SEEK_SET)
         yield file.read(delta)
 
-def CsvEndReader(path, lines, Processed = False):
+def csv_end_reader(path, lines, Processed = False):
     out = []
     with open(path) as file:
         for line in islice(reversed_lines(file), lines):

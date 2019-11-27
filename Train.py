@@ -1,5 +1,5 @@
-from Parameters import p
-from ModelTraining import Train
+from params import omni_params
+from omnitrade import Train
 
 
-Model, history = Train(p)
+Model, history = Train(omni_params)
