@@ -17,6 +17,19 @@ omni_params['validation_proportion'] = 0.2
 omni_params['epochs'] = 3
 omni_params['batch_size'] = 128
 omni_params['activation'] = 'sigmoid'
+
+omni_params['bayesian_search_space'] = {'MainLSTMlayers': (2, 8),
+           'MainLSTMNodes': (32, 256),
+           'MainLSTMDropout': (0.15, 0.4),
+           'FinalLSTMNodes': (32, 256),
+           'FinalLSTMDropout': (0.15, 0.4),
+           'FinalDenseNodes': (32, 256),
+           'FinalDenseDropout': (0.15, 0.4),
+           'LearningRate': (0.0001, 0.01),
+           'Decay': (0.00000001, 0.01)
+          }
+omni_params['bayesian_initial_points'] = 5
+omni_params['bayesian_iterations'] = 20
 ### Input Parameters above
 
 
