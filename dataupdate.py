@@ -49,7 +49,7 @@ def alphavantage_update(tickers = []):
 
         else:
             print('No overlap for ' + ticker)
-            log['NoOverlap'].append(ticker)
+            log['no_overlap'].append(ticker)
             log['timestamp'].append(str(datetime.now()))
 
     print(str(up_to_date) + ' tickers already up to date.')
