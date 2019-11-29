@@ -11,6 +11,8 @@
 * Includes automated stock price data updates
 * Flexible for easy experimentation, ex. for different stocks (including multiple stocks simultaneously), prediction time lengths (ex. predict buy or 2 hours, weeks etc. ahead), minimum return required to generate buy signals etc.
 
+![alt text](https://github.com/justinmulli/OmniTrade/blob/master/readme%20images/Basic%20overview%20flowchart.jpg)
+
 ###### More Details: ######
 
 Omnitrade is a project aimed at applying machine learning to stock price prediction. In a nutshell, it uses TensorFlow and Keras to build a Neural Network which generates buy/sell signals when the price is predicted to move up/down beyond a given threshold in a given time period (ex. 1% increase in 2 hours).
