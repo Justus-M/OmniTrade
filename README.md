@@ -1,15 +1,15 @@
-![alt text](https://github.com/justinmulli/OmniTrade/blob/master/readme%20images/logo.png)
-
 # OmniTrade
+
+![alt text](https://github.com/justinmulli/OmniTrade/blob/master/readme%20images/logo.png)
 
 ## High level description ##
 
 ###### In a nutshell: ######
-* Neural network for stock price prediction
-* Generates buy or sell signals
-* Includes automated model tuning/building
+* Stock price prediction using machine learning
+* Generates buy or sell signals using a neural network
+* Includes automated model building and tuning (hyperparameter search)
 * Includes automated stock price data updates
-* Flexible for easy experimentation, ex. for different stocks (including multiple stocks simultaneously), prediction time lengths (ex. predict buy or 2 hours, weeks etc. ahead), minimum return required to generate buy signals etc.
+* Flexible for easy experimentation, ex. for different combinations of stocks, different prediction time periods and return thresholds (ex. predict a buy recommendation for 2 hours ahead at 1% return), etc.
 
 ![alt text](https://github.com/justinmulli/OmniTrade/blob/master/readme%20images/Basic%20overview%20flowchart.jpg)
 
