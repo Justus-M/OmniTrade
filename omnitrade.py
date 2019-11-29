@@ -90,25 +90,14 @@ def bayes_optimization():
     global glob_params
     glob_params = omni_params
 
-    pbounds = {'MainLSTMlayers': (2, 8),
-           'MainLSTMNodes': (32, 256),
-           'MainLSTMDropout': (0.15, 0.4),
-           'FinalLSTMNodes': (32, 256),
-           'FinalLSTMDropout': (0.15, 0.4),
-           'FinalDenseNodes': (32, 256),
-           'FinalDenseDropout': (0.15, 0.4),
-           'LearningRate': (0.0001, 0.01),
-           'Decay': (0.00000001, 0.01)
-          }
-
     optimizer = BayesianOptimization(
         f=optimization_evaluation,
-        pbounds=pbounds,
+        pbounds=omni_params['bayesian_search_space'],
         verbose=2,
         random_state=1,
     )
 
-    optimizer.maximize(init_points=10, n_iter=100)
+    optimizer.maximize(init_points=omni_params['bayesian_initial_points'], n_iter=omni_params['bayesian_iterations'])
     print(optimizer.max)
 
 def define_layers(hyperparams):
