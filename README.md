@@ -7,9 +7,9 @@
 ###### In a nutshell: ######
 * Stock price prediction using machine learning
 * Generates buy or sell signals using a neural network
-* Includes automated model building and tuning (hyperparameter search)
-* Includes automated stock price data updates
-* Flexible for easy experimentation, ex. for different combinations of stocks, different prediction time periods and return thresholds (ex. predict a buy recommendation for 2 hours ahead at 1% return), etc.
+* Automated model building and tuning (hyperparameter search)
+* Automated stock price data updates
+* Flexible for easy experimentation, ex. for different combinations of stocks, different prediction time periods and return thresholds (ex. predict a buy signal if price goes up 1% 2 hours in the future), etc.
 
 ![alt text](https://github.com/justinmulli/OmniTrade/blob/master/readme%20images/Basic%20overview%20flowchart.jpg)
 
@@ -17,9 +17,9 @@
 
 Omnitrade is a project aimed at applying machine learning to stock price prediction. In a nutshell, it uses TensorFlow and Keras to build a Neural Network which generates buy/sell signals when the price is predicted to move up/down beyond a given threshold in a given time period (ex. 1% increase in 2 hours).
 
-Both the hyperparameters for the neural network and the parameters used for feature engineering such as the tickers of the stocks/companies for which to make predictions and the prediction length can be changed easily in the designated files. The code allows for substantial flexibility in this regard, as explained below in the functionality section. OmniTrade requires only minimal effort to use, meaning once input data files and your personal API key are in place one import and one function call will suffice to launch any of the processes, whether it's one round of training the neural network, automated hyperparameter optimization, or launching a live feed of predictions.
+Both the hyperparameters for the neural network and the parameters used for feature engineering such as the tickers of the stocks/companies for which to make predictions and the prediction length can be changed easily in the designated files. The code allows for substantial flexibility in this regard, as explained below in the functionality section. OmniTrade requires only minimal effort to use. When input data files and your personal API key are in place, one import and one function call will suffice to launch any of the processes, whether it's one round of training the neural network, automated hyperparameter optimization, or launching a live feed of predictions.
 
-In terms of automation, data updates can be done automatically in the background through the dataupdate script which grabs data from the alphavantage API to enrich the existing data files with the latest data. Furthermore, the models can be automatically optimized using bayesian optimization to conduct an automatic hyperparameter search for a given range of parameters and automatically replace the saved models and hyperparameters when a new top performing model is found. This way the live predictions can be up and running for trading while the model is being optimized in the background, with predictions improving when a better performing model is found and used to replace the existing model used for predictions.
+In terms of automation, data updates can be done automatically in the background through the dataupdate script which grabs data from the alphavantage API to enrich the existing data files using the latest data. Furthermore, the models can be automatically optimized using bayesian optimization to conduct an automatic hyperparameter search for a given range of parameters and automatically replace the saved models and hyperparameters when a new top performing model is found. This way the live predictions can be up and running for trading while the model is being optimized in the background, so predictions will improve when a better performing model is found and replaces the existing model immediately.
 
 ## Functionality/Getting Started ##
 
@@ -29,10 +29,10 @@ The absolute minimum requirements to make use of OmniTrade are:
 
 1. Python 3+ (ideally 3.7)
 2. Python package requirements as detailed in the requirements.txt file
-3. One data file for one stock with at least a few years of (at least) 5 minute frequency data, formatted in line with this stock price data for Microsoft ranging from 2007 till 2019 which I am providing as a starter kit https://drive.google.com/open?id=1zO4M-0DAHRDfk2M13fRFkXVdPFVdEhIr. **Save this file under OmniTrade/Data/minute**.
+3. One data file for one stock with at least a few years of at least 5 minute frequency data, formatted in line with this stock price data for Microsoft ranging from 2007 till 2019. This file will suffice to meet the data requirement. https://drive.google.com/open?id=1zO4M-0DAHRDfk2M13fRFkXVdPFVdEhIr. **Save this file under OmniTrade/Data/Minute**.
 
-Once the above requirements are met simply `import omnitrade` and run any of the following:
-1. `omnitrade.live_feed()` to launch the live prediction feed (be sure to keep data up to date as described below).
+Once the above requirements are met, simply `import omnitrade` and run any of the following:
+1. `omnitrade.live_feed()` to launch the live prediction feed (be sure to keep data up to date and save an API key as described below).
 2. `omnitrade.train()` to launch one round of model training
 3. `omnitrade.bayes_optimization()` to launch automated hyperparameter optimization.
 
@@ -42,22 +42,22 @@ Once the above requirements are met simply `import omnitrade` and run any of the
 
 ###### Modifying parameters ######
 
-Most parameters are saved in the `params.py` file, with the exception of most neural network hyperparameters which are saved in the `Optimal Hyperparameters.txt` file as this file is replaced automatically when a new top performing model has been trained. Parameters can be changed manually in the respective files. Be sure to follow the requirements detailed in the files.
+Most parameters are saved in the `params.py` file, with the exception of most neural network hyperparameters which are saved in the `Optimal Hyperparameters.txt` file as this file is replaced automatically when a new optimal set of hyperparameters is found. Parameters can be changed manually in the respective files. Be sure to follow the requirements detailed in the files.
 
-OmniTrade was designed to make the bulk testing of parameters flexible by importing omni_params from the params.py file (`import omni_params from params as my_params` for example), reassigning the desired parameters in your imported parameter dictionary and calling `omni_trade.train(omni_params = my_params)`. By doing this you could run a loop to train a neural network on historical stock price data for a variety of companies/stocks, prediction lengths (any number of minutes, hours, days, weeks, months or years), buy thresholds (minimum percentage return for which the model should generate a buy or sell signal), hindsight (how many days/weeks etc. the model should look back to make the prediction) and more, in order to test theories or run experiments in bulk with just a few lines of code.
+OmniTrade was designed to make the bulk testing of parameters flexible by importing omni_params from the params.py file (`import omni_params from params as my_params` for example), reassigning the desired parameters in your imported parameter dictionary and calling `omni_trade.train(omni_params = my_params)`. By doing this you could run a loop to train a neural network on historical stock price data for a variety of companies/stocks, prediction lengths, minimum return for a buy signal, hindsight (how many days/weeks etc. the model should look back to make the prediction) and more. This allows the testing of theories or running of experiments in bulk with just a few lines of code.
 
-When a model is trained with new parameters, the model is automatically saved with a name corresponding to the ID corresponding to the specifications and accuracy which are saved in the `Model Index.csv`. This way OmniTrade can automatically check the model index to identify the correct model ID for a given set of parameters when making live predictions, and when a new maximum accuracy is reached the model is replaced by the new top performer.
+When a model is trained with new parameters, it is automatically saved with a name corresponding to the ID matching the corresponding specifications and accuracy saved in `Model Index.csv`. This way OmniTrade can automatically check the model index to identify the correct model ID for a given set of parameters, and grab the right model when making live predictions. When a new maximum accuracy is reached the model is replaced by the new optimal model.
 
 ###### Keeping data up to date (required for using live predictions) ######
 
 OmniTrade was intended to generate buy and sell signals for NYSE stocks, and is set up to automatically update all saved stock price files once the market closes. In order to enable this functionality, simply do the following:
 
-1. Grab a free API key from alphavantage.co and store it as a text string variable named my_alpha_vantage_key in a file named keys.py in the main OmniTrade folder. 
+1. Grab a free API key from alphavantage.co and store it as a text string variable `my_alpha_vantage_key = '123yourkey123'` in a file named `keys.py` in the main OmniTrade folder. 
 
 2. Make sure minimum requirements are met as described at the beginning of the Getting Started section.
 
-3. Run the dataupdate script. The simplest way to do this is to call `python3 dataupdate.py` from the OmniTrade directory in the terminal. It will automatically check for what stock tickers (`[ticker].csv`, ex. `MSFT.csv` for Microsoft) you have data saved, pull the respective data from the alphavantage API using your key, and then add it to your existing data file(s). The lowest maintenance way of doing this is to leave it running permanently in the background (ex. on a cloud instance).
-  -If the market is open, it will wait till the market is closed to update, and once complete it will wait a full trading session (i.e. open and close) before the next update.
+3. Run the dataupdate script. The simplest way to do this is to call `python3 dataupdate.py` from the OmniTrade directory in the terminal. The lowest maintenance way of keeping your data upt o date is to leave it running in the background or on a server/cloud instance.
+  -If the market is open, it will wait until the market is closed to update, and once complete it will wait a full trading session (i.e. open and close) before the next update.
   -This must be executed at least once every 7 days as the alphavantage minute data only stretches back one week, so if this time is exceeded there will be no overlap and the script will skip the stock to avoid a data gap.
   
 ###### How it works ######
