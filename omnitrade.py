@@ -10,6 +10,7 @@ from bayes_opt import BayesianOptimization
 import dataupdate
 import time
 import logging
+import numpy as np
 
 def suppress_tf_warnings():
     logging.getLogger('tensorflow').disabled = True
@@ -40,8 +41,8 @@ def data_prep(omni_params):
         ### Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
         consecutive_buys = (omni_tf_data.training_frame['none'] != 1) & (omni_tf_data.training_frame['none'].shift(periods=-1) != 1)
         omni_tf_data.training_frame['none'] += consecutive_buys.astype(int) * 2
-        omni_tf_data.time_series_tf_dataset(label_count=omni_params['label_count'], cols_exclude=omni_params['price_count'], window_size=omni_params['hindsight'],
-                                   batch_size=omni_params['batch_size'])
+        omni_tf_data.time_series_tf_dataset(label_count = omni_params['label_count'], cols_exclude = omni_params['price_count'], window_size = omni_params['hindsight'],
+                                   batch_size = omni_params['batch_size'])
     elif omni_params['purpose'] == 'live_prediction':
         omni_tf_data.rename_pred()
         omni_tf_data.pred_frame = omni_tf_data.pred_frame.iloc[:omni_params['hindsight']]
@@ -168,7 +169,11 @@ def predict(input_data, omni_params = None):
         predictions = pd.DataFrame(predictions, index=[input_data.pred_frame.index.values[0]])
     else:
         predictions = pd.DataFrame(predictions, index=input_data.test_frame.index)
-    headers = [a + b for a, b in zip(omni_params['target_tickers'], ([' long'] * len(omni_params['target_tickers'])))]
+    headers = []
+    for ticker in omni_params['target_tickers']:
+        headers.append(ticker + ' long')
+        if omni_params['sell_threshold'] != None:
+            headers.append(ticker + ' short')
     headers.append('none')
     predictions.columns = headers
 
@@ -178,7 +183,7 @@ def live_feed():
 
     from params import omni_params
     omni_params['purpose'] = 'live_prediction'
-    interval = p['hindsight_interval'].replace('T','')
+    interval = omni_params['hindsight_interval'].replace('T','')
 
     suppress_tf_warnings()
     
@@ -193,13 +198,19 @@ def live_feed():
 
         prediction = predict(latest_data, omni_params)
 
-        print(Prediction)
+        print(prediction)
 
-        for signal in prediction.values:
-            if max(signal) != signal[-1]:
-                print('Recommendation to buy ' + omni_params['target_tickers'][0])
-            else:
-                print('Recommendation not to buy ' + omni_params['target_tickers'][0])
+        signal = prediction.values[0]
+        if max(signal) != signal[-1]:
+
+            max_index = np.where(signal == max(signal))[0][0]
+            max_header = prediction.columns.values[max_index].split()
+            position = max_header[1]
+            ticker = max_header[0]
+
+            print(f'Recommendation to go {position} on {ticker} stock.')
+        else:
+            print('Recommendation not to enter any new positions')
 
 
         if last_open != now:
