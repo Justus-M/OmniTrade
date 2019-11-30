@@ -29,7 +29,7 @@ The absolute minimum requirements to make use of OmniTrade are:
 
 1. Python 3+ (ideally 3.7)
 2. Python package requirements as detailed in the requirements.txt file
-3. One data file for one stock with at least a few years of at least 5 minute frequency data, formatted in line with this stock price data for Microsoft ranging from 2007 till 2019. This file will suffice to meet the data requirement. https://drive.google.com/open?id=1zO4M-0DAHRDfk2M13fRFkXVdPFVdEhIr. **Save this file under OmniTrade/Data/Minute**.
+3. One data file for one stock with at least a few years of at least 5 minute frequency data, formatted in line with this stock price data for Microsoft ranging from 2007 till 2019. This file will suffice to meet the data requirement. https://www.icloud.com/iclouddrive/0tFijTwhzaEN7Z7KYs5GofeBw#MSFT. **Save this file under OmniTrade/Data/Minute/MSFT.csv**.
 
 Once the above requirements are met, simply `import omnitrade` and run any of the following:
 1. `omnitrade.live_feed()` to launch the live prediction feed (be sure to keep data up to date and save an API key as described below).
