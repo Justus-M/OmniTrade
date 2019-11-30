@@ -27,7 +27,7 @@ def alphavantage_update(tickers = []):
                 tickers.append(ticker.replace('.csv', ''))
 
     for ticker in tickers:
-        file = 'Data/Minute/%s.csv' % (ticker)
+        file = f'Data/Minute/{ticker}.csv'
         timestamp = csv_end_reader(file, 1, Processed = True).index.values[0]
         pandas_timestamp = pd.to_datetime(timestamp, format='%Y-%m-%d %H:%M:%S')
         timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').replace(tzinfo=tz)
@@ -48,11 +48,10 @@ def alphavantage_update(tickers = []):
             update.to_csv(file, header = False, mode='a')
 
         else:
-            print('No overlap for ' + ticker)
+            print(f'No overlap for {ticker}, not updating data for this ticker to avoid data gap.')
             log['no_overlap'].append(ticker)
             log['timestamp'].append(str(datetime.now()))
 
-    print(str(up_to_date) + ' tickers already up to date.')
     log = pd.DataFrame({k: pd.Series(l) for k, l in log.items()})
     log.to_csv('sync_log.csv') #save log of unsuccesful updates for manual intervention/investigation
 
