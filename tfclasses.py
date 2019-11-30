@@ -1,9 +1,6 @@
 import tensorflow as tf
 import pandas as pd
 from sklearn import preprocessing
-from tensorflow import keras
-from bayes_opt import BayesianOptimization as BayesOpt
-from tensorflow.keras.models import Sequential
 from collections import Counter
 
 
