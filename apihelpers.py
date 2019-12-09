@@ -26,6 +26,8 @@ def get_minute_data(ticker, key):
         frame.index = pd.to_datetime(frame.index.values, format='%Y-%m-%d %H:%M:%S')
     except:
         print('Request error for ' + ticker)
+        frame = pd.DataFrame()
+
 
 
     return frame
