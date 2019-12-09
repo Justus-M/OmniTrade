@@ -58,6 +58,9 @@ specs['tickers'] = omni_params['tickers']
 specs['n_tickers'] = len(omni_params['tickers'])
 specs['foresight'] = omni_params['foresight']
 specs['hindsight'] = omni_params['hindsight']
+specs['buy_threshold'] = omni_params['buy_threshold']
+specs['sell_threshold'] = omni_params['sell_threshold']
+if omni_params['sell_threshold'] == None:
+    specs['sell_threshold'] = 'None'
 specs['interval'] = omni_params['hindsight_interval']
-specs['short'] = omni_params['sell_threshold']
 omni_params['specs'] = specs
