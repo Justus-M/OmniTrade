@@ -90,6 +90,7 @@ if __name__ == '__main__':
             LastOpen, EOD, now = last_market_open()
 
         alphavantage_update()
+
         LastOpen, EOD, now = last_market_open()
 
         while LastOpen != now:
