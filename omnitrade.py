@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os, sys, time, logging
 from featureengineering import feature_engineering
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
@@ -8,13 +8,17 @@ import tensorflow as tf
 from tfclasses import tf_data
 from bayes_opt import BayesianOptimization
 import dataupdate
-import time
-import logging
 import numpy as np
+from importlib import reload
 
 def suppress_tf_warnings():
     logging.getLogger('tensorflow').disabled = True
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+def reload_params():
+    import params
+    reload(params)
+    return params.omni_params
 
 def data_prep(omni_params):
 
@@ -54,7 +58,7 @@ def data_prep(omni_params):
 def train(training_data = False, omni_params = False):
 
     if not omni_params:
-        from params import omni_params
+        omni_params = reload_params()
 
     if not training_data:
         training_data = data_prep(omni_params)
@@ -87,9 +91,9 @@ def optimization_evaluation(**parameters):
 
 def bayes_optimization():
 
-    from params import omni_params
+    omni_params = reload_params()
     global glob_params
-    glob_params = omni_params
+    glob_params = omni_params.copy()
 
     optimizer = BayesianOptimization(
         f=optimization_evaluation,
@@ -148,17 +152,24 @@ def save_model(params, Model, hist):
 def predict(input_data, omni_params = None):
 
     if omni_params is None:
-        from params import omni_params
+        omni_params = reload_params()
+
+    def no_model():
+        print('No saved models with matching specifications. Train model first.')
+        sys.exit(0)
 
     if not os.path.exists('Models/Model Index.csv'):
-        print('No Models saved. Train model first.')
-        return
+        no_model()
 
     model_index = pd.read_csv('models/Model Index.csv', index_col= 'ID')
 
     filter = model_index.index > 0
     for specification in omni_params['specs']:
         filter &= omni_params['specs'][specification] == model_index[specification]
+
+    if sum(filter)==0:
+        no_model()
+
     model_ID = model_index.index[filter][0]
 
     model = load_model('Models/%s.h5' % model_ID)
@@ -181,7 +192,8 @@ def predict(input_data, omni_params = None):
 
 def live_feed():
 
-    from params import omni_params
+    omni_params = reload_params()
+
     omni_params['purpose'] = 'live_prediction'
     interval = omni_params['hindsight_interval'].replace('T','')
 
