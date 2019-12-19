@@ -5,8 +5,7 @@
 ## High level description ##
 
 ###### In a nutshell: ######
-* Stock price prediction using machine learning
-* Generates buy or sell signals using a neural network
+* Generating buy or sell signals using a neural network on historical market data
 * Automated model building and tuning (hyperparameter search)
 * Automated stock price data updates
 * Flexible for easy experimentation, ex. for different combinations of stocks, different prediction time periods and return thresholds (ex. predict a buy signal if price goes up 1% 2 hours in the future), etc.
