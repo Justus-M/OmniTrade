@@ -1,15 +1,17 @@
 import pandas as pd
 import os, sys, time, logging
-from featureengineering import feature_engineering
+from featureengineering import feature_engineering, feature_engineering_stack
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 import tensorflow as tf
 from tfclasses import tf_data
 from bayes_opt import BayesianOptimization
 import dataupdate
 import numpy as np
 from importlib import reload
+from sklearn.model_selection import KFold
+import sys
+import kerastuner as kt
 
 def suppress_tf_warnings():
     logging.getLogger('tensorflow').disabled = True
@@ -20,7 +22,7 @@ def reload_params():
     reload(params)
     return params.omni_params
 
-def data_prep(omni_params):
+def data_prep(omni_params, fold = False):
 
     omni_tf_data = tf_data()
 
@@ -39,12 +41,43 @@ def data_prep(omni_params):
 
     if omni_params['purpose'] == 'training':
         omni_tf_data.training_frame = omni_tf_data.training_frame[omni_tf_data.training_frame.index.year > omni_params['year_cutoff']]
-        omni_tf_data.split()
+        if not fold:
+            omni_tf_data.folds = False
+            omni_tf_data.split()
+        else:
+            omni_tf_data.folds = fold
+            folder = KFold(n_splits=fold[1])
+            folds = list(folder.split(omni_tf_data.training_frame))
+            train, val = folds[fold[0]]
+            omni_tf_data.validation_frame = omni_tf_data.training_frame.iloc[val].copy()
+            omni_tf_data.test_frame = omni_tf_data.training_frame.iloc[val[-1]:].copy()
+            omni_tf_data.splits.extend(['test', 'validation'])
+            omni_tf_data.training_frame = omni_tf_data.training_frame.iloc[:val[0]]
+
+        if fold:
+            if fold[0] in list(range(fold[1]))[1:-1]:
+                omni_tf_data.training_frame = feature_engineering(omni_params, omni_tf_data.training_frame)
+                omni_tf_data.test_frame = feature_engineering(omni_params, omni_tf_data.test_frame)
+            elif not fold[0]:
+                omni_tf_data.training_frame = omni_tf_data.test_frame
+
         omni_tf_data.training_frame = feature_engineering(omni_params, omni_tf_data.training_frame)
-        omni_tf_data.validation_frame = feature_engineering(omni_params, omni_tf_data.validation_frame)
+
         ### Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
-        consecutive_buys = (omni_tf_data.training_frame['none'] != 1) & (omni_tf_data.training_frame['none'].shift(periods=-1) != 1)
+        consecutive_buys = (omni_tf_data.training_frame['none'] != 1) & (
+                omni_tf_data.training_frame['none'].shift(periods=-1) != 1)
         omni_tf_data.training_frame['none'] += consecutive_buys.astype(int) * 2
+
+        try:
+            consecutive_buys = (omni_tf_data.test_frame['none'] != 1) & (
+                    omni_tf_data.test_frame['none'].shift(periods=-1) != 1)
+            omni_tf_data.test_frame['none'] += consecutive_buys.astype(int) * 2
+        except:
+            pass
+
+
+
+        omni_tf_data.validation_frame = feature_engineering(omni_params, omni_tf_data.validation_frame)
         omni_tf_data.time_series_tf_dataset(label_count = omni_params['label_count'], cols_exclude = omni_params['price_count'], window_size = omni_params['hindsight'],
                                    batch_size = omni_params['batch_size'])
     elif omni_params['purpose'] == 'live_prediction':
@@ -55,63 +88,90 @@ def data_prep(omni_params):
 
     return omni_tf_data
 
-def train(training_data = False, omni_params = False):
+def data_prep_stack(omni_params):
+
+    stack = {}
+    dataset = tf_data()
+    for ticker in omni_params['target_tickers']:
+        stack[ticker] = tf_data()
+        raw_frame = pd.read_csv(f'{str(omni_params["data_path"])}/{ticker}.csv', header=0, index_col ='timestamp', parse_dates=True)
+        raw_frame.columns = ticker + ' ' + raw_frame.columns.values
+        raw_frame.index = pd.to_datetime(raw_frame.index, unit='s')
+        raw_frame = raw_frame.resample(omni_params['hindsight_interval']).mean()
+        raw_frame.dropna(inplace = True)
+        stack[ticker].training_frame = raw_frame
+
+        stack[ticker].training_frame = stack[ticker].training_frame[::-1]
+
+        stack[ticker].training_frame = stack[ticker].training_frame[stack[ticker].training_frame.index.year > omni_params['year_cutoff']]
+        stack[ticker].split(validation = omni_params['validation_proportion'], test = omni_params['test_proportion'])
+        stack[ticker].training_frame = feature_engineering_stack(omni_params, stack[ticker].training_frame, ticker)
+        stack[ticker].validation_frame = feature_engineering_stack(omni_params, stack[ticker].validation_frame, ticker)
+        ### Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
+        consecutive_buys = (stack[ticker].training_frame['none'] != 1) & (stack[ticker].training_frame['none'].shift(periods=-1) != 1)
+        stack[ticker].training_frame['none'] += consecutive_buys.astype(int) * 2
+        consecutive_buys2 = (stack[ticker].validation_frame['none'] != 1) & (
+                    stack[ticker].validation_frame['none'].shift(periods=-1) != 1)
+        stack[ticker].validation_frame['none'] += consecutive_buys2.astype(int) * 2
+        stack[ticker].time_series_tf_dataset(label_count = omni_params['label_count'], cols_exclude = omni_params['price_count'], window_size = omni_params['hindsight'],
+                                   batch_size = omni_params['batch_size'])
+        try:
+            dataset.tf_training_dataset = dataset.tf_training_dataset.concatenate(stack[ticker].tf_training_dataset)
+            dataset.tf_validation_dataset = dataset.tf_validation_dataset.concatenate(stack[ticker].tf_validation_dataset)
+        except:
+            dataset.tf_training_dataset = stack[ticker].tf_training_dataset
+            dataset.tf_validation_dataset = stack[ticker].tf_validation_dataset
+            print('failed '+ ticker)
+    return dataset
+
+def cross_validation(model_builder, argument, folds, omni_parameters, cb):
+    metric = []
+    for i in range(folds):
+        model = model_builder(argument)
+        training_data = data_prep(omni_parameters, fold=[i, folds])
+        history = model.fit(training_data.tf_training_dataset, epochs=100,
+                            validation_data=training_data.tf_validation_dataset, use_multiprocessing=True,
+                            workers=16, callbacks=[cb])
+        metric.append(min(history.history['val_accuracy']))
+        print(f'fold {i + 1}')
+    print(f'mean metric {np.mean(metric)}')
+    return np.mean(metric), history
+
+def train(omni_params = False, folds = False, search = False):
 
     if not omni_params:
         omni_params = reload_params()
 
-    if not training_data:
-        training_data = data_prep(omni_params)
+    cb = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=10,
+                                          restore_best_weights=True)
 
-        with open('models/Optimal Hyperparameters.txt') as hyperparameters:
-            omni_params['hyperparams'] = eval(hyperparameters.read())
+    def cv_bayesian_tuning(builder, objective='val_accuracy', max_trials=100):
 
+        class bayes(kt.tuners.bayesian.BayesianOptimization):
 
-    omni_params['layers'] = define_layers(omni_params['hyperparams'])
+            def run_trial(self, trial):
+                mean_metric, history = cross_validation(self.hypermodel.build, trial.hyperparameters, 5, omni_params, cb)
+                self.oracle.update_trial(trial.trial_id, {'val_accuracy': mean_metric})
+                self.save_model(trial.trial_id, history.model)
 
-    model, history = train_keras_model(omni_params, training_data)
-    model.evaluate(training_data.tf_validation_dataset)
+        return bayes(builder, objective, max_trials, num_initial_points=10)
 
-    save_model(omni_params, model, history)
+    tuner = cv_bayesian_tuning(builder)
 
-    return model, history
+    if not search:
+        if not folds:
+            model = tuner.hypermodel.build(kt.HyperParameters())
+            training_data = data_prep(omni_params)
+            history = model.fit(training_data.tf_training_dataset, epochs=omni_params['epochs'],
+                                validation_data=training_data.tf_validation_dataset, use_multiprocessing=True,
+                                workers=16, callbacks=[cb])
+        else:
+            mean_metric, history = cross_validation(tuner.hypermodel.build, kt.HyperParameters(), 5, omni_params, cb)
+    else:
+        tuner.search()
+        history = tuner
 
-def optimization_evaluation(**parameters):
-
-    input_data = data_prep(glob_params)
-
-    glob_params['hyperparams'] = {}
-
-    for param_name, param_value in parameters.items():
-        glob_params['hyperparams'][param_name] = param_value
-
-    _, history = train(training_data = input_data, omni_params = glob_params)
-
-    return history.history['val_accuracy'][-1]
-
-def bayes_optimization():
-
-    omni_params = reload_params()
-    global glob_params
-    glob_params = omni_params.copy()
-
-    optimizer = BayesianOptimization(
-        f=optimization_evaluation,
-        pbounds=omni_params['bayesian_search_space'],
-        verbose=2,
-        random_state=1,
-    )
-
-    optimizer.maximize(init_points=omni_params['bayesian_initial_points'], n_iter=omni_params['bayesian_iterations'])
-    print(optimizer.max)
-
-def define_layers(hyperparams):
-
-    layers = [[]] * int(hyperparams['MainLSTMlayers'])
-    for layer in range(0, int(hyperparams['MainLSTMlayers'])):
-        layers[layer].append([int(hyperparams['MainLSTMNodes']), int(hyperparams['MainLSTMDropout'])])
-
-    return layers
+    return history
 
 def save_model(params, Model, hist):
 
@@ -232,41 +292,39 @@ def live_feed():
 
 def train_keras_model(params, input_data):
 
-    model = Sequential()
-
-    hyperparams = params['hyperparams']
-
-    for layer in params['layers'][0]:
-        model.add(LSTM(layer[0], activation = 'tanh', return_sequences = True))
-        model.add(Dropout(layer[1]))
-        model.add(BatchNormalization())
-
-
-    model.add(LSTM(int(hyperparams['FinalLSTMNodes']), activation ='tanh'))
-    model.add(Dropout(hyperparams['FinalLSTMDropout']))
-    model.add(BatchNormalization()) 
-
-    model.add(Dense(int(hyperparams['FinalDenseNodes']), activation='relu'))
-    model.add(Dropout(hyperparams['FinalDenseDropout']))
-
-    model.add(Dense(params['label_count'], activation=params['activation']))
-
-    opt = tf.keras.optimizers.Adam(lr=hyperparams['LearningRate'], decay=hyperparams['Decay'])
-
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=opt,
-                  metrics=['accuracy'])
-
-    # NAME = f'{p["target_tickers"][0]}PRED-{p["Hp"]["MainLSTMlayers"]}-MainLayers-{p["Hp"]["MainLSTMNodes"]}-MainNodes-' \
-    #     f'{p["Hp"]["FinalLSTMNodes"]}-FinalLSTMNodes-{p["Hp"]["FinalLSTMDropout"]}-FinalLSTMDropout-{p["Hp"]["FinalDenseNodes"]}' \
-    #     f'-FinalDenseNodes-{p["Hp"]["FinalDenseDropout"]}-FinalDenseDropout-{p["Hp"]["LearningRate"]}-LearningRate-{p["Hp"]["Decay"]}-Decay'
-
-    # tensorboard = TensorBoard(log_dir='logs/{}'.format(NAME))
-
+    model = build_model(params)
 
     if params['purpose'] == 'training':
-        history = model.fit(input_data.tf_training_dataset, epochs=params['epochs'], validation_data=input_data.tf_validation_dataset) # , callbacks=[tensorboard]
+        history = model.fit(input_data.tf_training_dataset, epochs=params['epochs'], validation_data=input_data.tf_validation_dataset, use_multiprocessing=True, workers = 16) #   , callbacks=[tensorboard]
     else:
         history = model.fit(input_data.tf_training_dataset, epochs=params['epochs'])
 
     return model, history
+
+def builder(hp):
+    model = Sequential()
+    params = reload_params()
+
+    for layer in range(hp.Int('layers', 0, 5, default = 1)):
+        model.add(LSTM(hp.Int(f'units_{layer}', 4, 128, step = 4, default = 8), activation='tanh', return_sequences=True))
+        model.add(Dropout(hp.Float(f'dropout_{layer}', 0, 0.9, default = 0.4)))
+        if hp.Boolean(f'batch_norm_{layer}', default = True):
+            model.add(BatchNormalization())
+
+    model.add(LSTM(hp.Int('Final_LSTM_Nodes', 4, 128, step = 4, default = 8), activation='tanh'))
+    model.add(Dropout(hp.Float('Final_LSTM_dropout', 0, 0.9, default = 0.4)))
+    if hp.Boolean('Final_LSTM_batch_norm', default = True):
+        model.add(BatchNormalization())
+
+    model.add(Dense(hp.Int('Final_Dense_Nodes', 4, 128, step = 4, default = 8), activation='relu'))
+    model.add(Dropout(hp.Float('Final_Dense_dropout', 0, 0.9, default = 0.4)))
+
+    model.add(Dense(params['label_count'], activation=params['activation']))
+
+    opt = tf.keras.optimizers.Adam(lr=hp.Float('lr', 0.0000001, 0.1, default = 0.005), decay=hp.Float('decay', 0.000000001, 0.005, default = 0.000005))
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+    return model
+
