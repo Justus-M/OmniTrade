@@ -11,8 +11,10 @@ omni_params['buy_threshold'] = 0.01 ## 0-0.99   minimum price increase for a buy
 omni_params['sell_threshold'] = None ## None or 0-0.99    minimum price decrease for a short signal
 omni_params['data_path'] = 'Data/Minute' ## Path where your market data is stored. Should be stored as 'ticker.csv' ex. 'MSFT.csv'
 omni_params['validation_proportion'] = 0.2 ## Proportion of data to use for model validation
-omni_params['epochs'] = 3 ## number of neural network training epochs
-omni_params['batch_size'] = 128 ## batch size for neural network training
+omni_params['test_proportion'] = 0 ## Proportion of data to use for model testing
+
+omni_params['epochs'] = 20 ## number of neural network training epochs
+omni_params['batch_size'] = 32 ## batch size for neural network training
 
 #Below is the search space for the automated hyperparameter optimization
 omni_params['bayesian_search_space'] = {'MainLSTMlayers': (2, 8),
@@ -28,7 +30,6 @@ omni_params['bayesian_search_space'] = {'MainLSTMlayers': (2, 8),
 omni_params['bayesian_initial_points'] = 5
 omni_params['bayesian_iterations'] = 20
 ### Input Parameters above
-
 
 ### Do not modify below
 omni_params['displace'] = 2
@@ -50,8 +51,10 @@ for ticker in omni_params['target_tickers']:
 
 omni_params['target_tickers'].sort()
 omni_params['tickers'].sort()
-omni_params['label_count'] = len(omni_params['target_tickers']) * omni_params['displace'] + 1
-omni_params['price_count'] = len(omni_params['target_tickers']) * 2
+count = len(omni_params['target_tickers'])
+count = 1
+omni_params['label_count'] = count * omni_params['displace'] + 1
+omni_params['price_count'] = count * 2
 specs = {}
 specs['target_tickers'] = str(omni_params['target_tickers'])
 specs['tickers'] = omni_params['tickers']
