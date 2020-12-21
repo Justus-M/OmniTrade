@@ -6,6 +6,10 @@ from collections import Counter
 
 class tf_data():
 
+    def __init__(self):
+        self.splits = ['training']
+
+
     def pandas_import(self, path = None, index = None, parse_dates = False):
 
         self.training_frame = pd.read_csv(path, index_col = index, parse_dates = parse_dates)
@@ -44,15 +48,13 @@ class tf_data():
 
         return split_frame
 
-    def split(self, validation = 0.2, test = 0):
-
-        self.splits = ['training']
+    def split(self, validation = 0.2, test = 0.0):
 
         if validation > 0:
             self.validation_frame = self._split(validation)
             self.splits.append('validation')
         if test > 0:
-            self.test_frame = self._split(Test)
+            self.test_frame = self._split(test)
             self.splits.append('test')
 
     def window(self, tf_dataset, window_size, labels = True):
@@ -92,7 +94,7 @@ class tf_data():
         return tf_dataset
 
     def batch_prefetch(self, tf_dataset, batch_size):
-        tf_dataset = tf_dataset.batch(batch_size).prefetch(1)
+        tf_dataset = tf_dataset.batch(batch_size).prefetch(16)
         return tf_dataset
 
     def time_series_tf_dataset(self, label_count = 0, cols_exclude = 0, window_size = 128, batch_size = 1):
@@ -101,12 +103,25 @@ class tf_data():
             frame = getattr(self, f'{part}_frame')
             tf_dataset = self.pandas_to_tf_dataset(frame, label_count = label_count, cols_exclude = cols_exclude)
             tf_dataset = self.window(tf_dataset, window_size = window_size, labels = label_count!=0)
-            if part != 'test' and label_count!=0:
-                tf_dataset = self.binary_class_balance(frame[frame.columns.values[:-cols_exclude]], tf_dataset)
-                frame = frame.iloc[:-window_size + 1]
-                setattr(self, f'{part}_frame', frame.iloc[:-window_size + 1])
-            tf_dataset = self.batch_prefetch(tf_dataset, batch_size)
+            frame = frame.iloc[:-window_size + 1]
+            setattr(self, f'{part}_frame', frame.iloc[:-window_size + 1])
+            setattr(self, f'tf_{part}_dataset', tf_dataset)
 
+        if self.folds and self.folds[0] in list(range(self.folds[1]))[1:-1]:
+            self.training_frame = pd.concat([self.training_frame, self.test_frame])
+            self.tf_training_dataset = self.tf_training_dataset.concatenate(self.tf_test_dataset)
+
+
+        for part in self.splits:
+            if part != 'test' and label_count!=0:
+                frame = getattr(self, f'{part}_frame')
+                tf_dataset = getattr(self, f'tf_{part}_dataset')
+        #        tf_dataset = self.binary_class_balance(frame[frame.columns.values[:-cols_exclude]], tf_dataset)
+                setattr(self, f'tf_{part}_dataset', tf_dataset)
+
+        for part in self.splits:
+            tf_dataset = getattr(self, f'tf_{part}_dataset')
+            tf_dataset = self.batch_prefetch(tf_dataset, batch_size)
             setattr(self, f'tf_{part}_dataset', tf_dataset)
 
     def rename_pred(self, old_name = 'training_frame', new_name = 'pred_frame'):
