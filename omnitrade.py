@@ -12,6 +12,9 @@ from importlib import reload
 from sklearn.model_selection import KFold
 import sys
 import kerastuner as kt
+import pyarrow.parquet as pq
+
+#aws s3 sync s3://omni-raw-data/ /users/justusmulli/projects/omnitrade/awsfj
 
 def suppress_tf_warnings():
     logging.getLogger('tensorflow').disabled = True
@@ -27,6 +30,9 @@ def data_prep(omni_params, fold = False):
     omni_tf_data = tf_data()
 
     for ticker in omni_params['tickers']:
+        #raw_frame = pq.ParquetDataset('/users/justusmulli/projects/omnitrade/aws/aapl').read().to_pandas()
+        #raw_frame.set_index('time', inplace = True)
+        #raw_frame.index = pd.to_datetime(raw_frame.index)
         raw_frame = pd.read_csv(f'{str(omni_params["data_path"])}/{ticker}.csv', header=0, index_col ='timestamp', parse_dates=True)
         raw_frame.columns = ticker + ' ' + raw_frame.columns.values
         raw_frame.index = pd.to_datetime(raw_frame.index, unit='s')
@@ -87,42 +93,6 @@ def data_prep(omni_params, fold = False):
         omni_tf_data.time_series_tf_dataset(label_count=0, window_size=omni_params['hindsight'], batch_size=omni_params['batch_size'])
 
     return omni_tf_data
-
-def data_prep_stack(omni_params):
-
-    stack = {}
-    dataset = tf_data()
-    for ticker in omni_params['target_tickers']:
-        stack[ticker] = tf_data()
-        raw_frame = pd.read_csv(f'{str(omni_params["data_path"])}/{ticker}.csv', header=0, index_col ='timestamp', parse_dates=True)
-        raw_frame.columns = ticker + ' ' + raw_frame.columns.values
-        raw_frame.index = pd.to_datetime(raw_frame.index, unit='s')
-        raw_frame = raw_frame.resample(omni_params['hindsight_interval']).mean()
-        raw_frame.dropna(inplace = True)
-        stack[ticker].training_frame = raw_frame
-
-        stack[ticker].training_frame = stack[ticker].training_frame[::-1]
-
-        stack[ticker].training_frame = stack[ticker].training_frame[stack[ticker].training_frame.index.year > omni_params['year_cutoff']]
-        stack[ticker].split(validation = omni_params['validation_proportion'], test = omni_params['test_proportion'])
-        stack[ticker].training_frame = feature_engineering_stack(omni_params, stack[ticker].training_frame, ticker)
-        stack[ticker].validation_frame = feature_engineering_stack(omni_params, stack[ticker].validation_frame, ticker)
-        ### Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
-        consecutive_buys = (stack[ticker].training_frame['none'] != 1) & (stack[ticker].training_frame['none'].shift(periods=-1) != 1)
-        stack[ticker].training_frame['none'] += consecutive_buys.astype(int) * 2
-        consecutive_buys2 = (stack[ticker].validation_frame['none'] != 1) & (
-                    stack[ticker].validation_frame['none'].shift(periods=-1) != 1)
-        stack[ticker].validation_frame['none'] += consecutive_buys2.astype(int) * 2
-        stack[ticker].time_series_tf_dataset(label_count = omni_params['label_count'], cols_exclude = omni_params['price_count'], window_size = omni_params['hindsight'],
-                                   batch_size = omni_params['batch_size'])
-        try:
-            dataset.tf_training_dataset = dataset.tf_training_dataset.concatenate(stack[ticker].tf_training_dataset)
-            dataset.tf_validation_dataset = dataset.tf_validation_dataset.concatenate(stack[ticker].tf_validation_dataset)
-        except:
-            dataset.tf_training_dataset = stack[ticker].tf_training_dataset
-            dataset.tf_validation_dataset = stack[ticker].tf_validation_dataset
-            print('failed '+ ticker)
-    return dataset
 
 def cross_validation(model_builder, argument, folds, omni_parameters, cb):
     metric = []
@@ -289,17 +259,6 @@ def live_feed():
             print("Market Closed")
             break
         time.sleep(60*int(interval))
-
-def train_keras_model(params, input_data):
-
-    model = build_model(params)
-
-    if params['purpose'] == 'training':
-        history = model.fit(input_data.tf_training_dataset, epochs=params['epochs'], validation_data=input_data.tf_validation_dataset, use_multiprocessing=True, workers = 16) #   , callbacks=[tensorboard]
-    else:
-        history = model.fit(input_data.tf_training_dataset, epochs=params['epochs'])
-
-    return model, history
 
 def builder(hp):
     model = Sequential()
