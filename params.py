@@ -16,17 +16,6 @@ omni_params['test_proportion'] = 0 ## Proportion of data to use for model testin
 omni_params['epochs'] = 20 ## number of neural network training epochs
 omni_params['batch_size'] = 32 ## batch size for neural network training
 
-#Below is the search space for the automated hyperparameter optimization
-omni_params['bayesian_search_space'] = {'MainLSTMlayers': (2, 8),
-           'MainLSTMNodes': (32, 256),
-           'MainLSTMDropout': (0.15, 0.4),
-           'FinalLSTMNodes': (32, 256),
-           'FinalLSTMDropout': (0.15, 0.4),
-           'FinalDenseNodes': (32, 256),
-           'FinalDenseDropout': (0.15, 0.4),
-           'LearningRate': (0.0001, 0.01),
-           'Decay': (0.00000001, 0.01)
-          }
 omni_params['bayesian_initial_points'] = 5
 omni_params['bayesian_iterations'] = 20
 ### Input Parameters above
@@ -55,15 +44,9 @@ count = len(omni_params['target_tickers'])
 count = 1
 omni_params['label_count'] = count * omni_params['displace'] + 1
 omni_params['price_count'] = count * 2
-specs = {}
-specs['target_tickers'] = str(omni_params['target_tickers'])
-specs['tickers'] = omni_params['tickers']
+
+omni_params['specs'] = {}
+for key in ['tickers', 'target_tickers', 'foresight', 'hindsight', 'buy_threshold', 'sell_threshold', 'hindsight_interval']:
+    omni_params['specs'][key] = str(omni_params[key])
 specs['n_tickers'] = len(omni_params['tickers'])
-specs['foresight'] = omni_params['foresight']
-specs['hindsight'] = omni_params['hindsight']
-specs['buy_threshold'] = omni_params['buy_threshold']
-specs['sell_threshold'] = omni_params['sell_threshold']
-if omni_params['sell_threshold'] == None:
-    specs['sell_threshold'] = 'None'
-specs['interval'] = omni_params['hindsight_interval']
-omni_params['specs'] = specs
+
