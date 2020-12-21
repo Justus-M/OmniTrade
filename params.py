@@ -14,7 +14,7 @@ omni_params['validation_proportion'] = 0.2 ## Proportion of data to use for mode
 omni_params['test_proportion'] = 0 ## Proportion of data to use for model testing
 
 omni_params['epochs'] = 20 ## number of neural network training epochs
-omni_params['batch_size'] = 32 ## batch size for neural network training
+omni_params['batch_size'] = 256 ## batch size for neural network training
 
 omni_params['bayesian_initial_points'] = 5
 omni_params['bayesian_iterations'] = 20
@@ -41,12 +41,11 @@ for ticker in omni_params['target_tickers']:
 omni_params['target_tickers'].sort()
 omni_params['tickers'].sort()
 count = len(omni_params['target_tickers'])
-count = 1
 omni_params['label_count'] = count * omni_params['displace'] + 1
 omni_params['price_count'] = count * 2
 
 omni_params['specs'] = {}
 for key in ['tickers', 'target_tickers', 'foresight', 'hindsight', 'buy_threshold', 'sell_threshold', 'hindsight_interval']:
     omni_params['specs'][key] = str(omni_params[key])
-specs['n_tickers'] = len(omni_params['tickers'])
+omni_params['specs']['n_tickers'] = len(omni_params['tickers'])
 
