@@ -69,7 +69,7 @@ def data_prep(omni_params, fold = False):
 
         omni_tf_data.training_frame = feature_engineering(omni_params, omni_tf_data.training_frame)
 
-        ### Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
+        ## Find consecutive buy signals and change classifier so it is filtered out when the classes are balanced. This prevents overfitting.
         consecutive_buys = (omni_tf_data.training_frame['none'] != 1) & (
                 omni_tf_data.training_frame['none'].shift(periods=-1) != 1)
         omni_tf_data.training_frame['none'] += consecutive_buys.astype(int) * 2
@@ -86,6 +86,7 @@ def data_prep(omni_params, fold = False):
         omni_tf_data.validation_frame = feature_engineering(omni_params, omni_tf_data.validation_frame)
         omni_tf_data.time_series_tf_dataset(label_count = omni_params['label_count'], cols_exclude = omni_params['price_count'], window_size = omni_params['hindsight'],
                                    batch_size = omni_params['batch_size'])
+        omni_tf_data.weights  = {i: 1 / sum(omni_tf_data.training_frame.values[:,-(omni_params['price_count']+1-(omni_params['label_count']-i))]) for i in range(omni_params['label_count'])}
     elif omni_params['purpose'] == 'live_prediction':
         omni_tf_data.rename_pred()
         omni_tf_data.pred_frame = omni_tf_data.pred_frame.iloc[:omni_params['hindsight']]
@@ -101,7 +102,7 @@ def cross_validation(model_builder, argument, folds, omni_parameters, cb):
         training_data = data_prep(omni_parameters, fold=[i, folds])
         history = model.fit(training_data.tf_training_dataset, epochs=100,
                             validation_data=training_data.tf_validation_dataset, use_multiprocessing=True,
-                            workers=16, callbacks=[cb])
+                            workers=16, callbacks=[cb], class_weight=training_data.weights)
         metric.append(min(history.history['val_accuracy']))
         print(f'fold {i + 1}')
     print(f'mean metric {np.mean(metric)}')
@@ -112,16 +113,16 @@ def train(omni_params = False, folds = False, search = False):
     if not omni_params:
         omni_params = reload_params()
 
-    cb = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=10,
+    cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', mode = 'max', patience=10,
                                           restore_best_weights=True)
 
-    def cv_bayesian_tuning(builder, objective='val_accuracy', max_trials=100):
+    def cv_bayesian_tuning(builder, objective=kt.Objective('val_auc', 'max'), max_trials=100):
 
         class bayes(kt.tuners.bayesian.BayesianOptimization):
 
             def run_trial(self, trial):
                 mean_metric, history = cross_validation(self.hypermodel.build, trial.hyperparameters, 5, omni_params, cb)
-                self.oracle.update_trial(trial.trial_id, {'val_accuracy': mean_metric})
+                self.oracle.update_trial(trial.trial_id, {'val_auc': mean_metric})
                 self.save_model(trial.trial_id, history.model)
 
         return bayes(builder, objective, max_trials, num_initial_points=10)
@@ -134,7 +135,7 @@ def train(omni_params = False, folds = False, search = False):
             training_data = data_prep(omni_params)
             history = model.fit(training_data.tf_training_dataset, epochs=omni_params['epochs'],
                                 validation_data=training_data.tf_validation_dataset, use_multiprocessing=True,
-                                workers=16, callbacks=[cb])
+                                workers=16, callbacks=[cb],class_weight=training_data.weights)
         else:
             mean_metric, history = cross_validation(tuner.hypermodel.build, kt.HyperParameters(), 5, omni_params, cb)
     else:
@@ -281,9 +282,9 @@ def builder(hp):
     model.add(Dense(params['label_count'], activation=params['activation']))
 
     opt = tf.keras.optimizers.Adam(lr=hp.Float('lr', 0.0000001, 0.1, default = 0.005), decay=hp.Float('decay', 0.000000001, 0.005, default = 0.000005))
-
+    metrics = [tf.keras.metrics.CategoricalAccuracy(), tf.keras.metrics.AUC()]
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
-                  metrics=['accuracy'])
+                  metrics=metrics)
     return model
 
