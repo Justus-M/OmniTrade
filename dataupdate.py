@@ -2,10 +2,10 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta, time
 import time as t
-from apihelpers import get_minute_data
+#from apihelpers import get_minute_data
 import pytz
 from Helpers import csv_end_reader
-from keys import my_alpha_vantage_key
+#from keys import my_alpha_vantage_key
 
 tz = pytz.timezone('America/New_York')
 
