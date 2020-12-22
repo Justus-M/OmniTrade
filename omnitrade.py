@@ -5,8 +5,7 @@ from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization
 import tensorflow as tf
 from tfclasses import tf_data
-from bayes_opt import BayesianOptimization
-import dataupdate
+#import dataupdate
 import numpy as np
 from importlib import reload
 from sklearn.model_selection import KFold
@@ -100,9 +99,15 @@ def cross_validation(model_builder, argument, folds, omni_parameters, cb):
     for i in range(folds):
         model = model_builder(argument)
         training_data = data_prep(omni_parameters, fold=[i, folds])
+        for file in os.listdir():
+            if 'status' in file:
+                os.remove(file)
+        if 'fold' in file:
+        os.mknod(f'{file.split(" fold ")[0]} fold {i} of {folds}')
         history = model.fit(training_data.tf_training_dataset, epochs=100,
                             validation_data=training_data.tf_validation_dataset, use_multiprocessing=True,
                             workers=16, callbacks=[cb], class_weight=training_data.weights)
+
         metric.append(min(history.history['val_accuracy']))
         print(f'fold {i + 1}')
     print(f'mean metric {np.mean(metric)}')
@@ -121,9 +126,22 @@ def train(omni_params = False, folds = False, search = False):
         class bayes(kt.tuners.bayesian.BayesianOptimization):
 
             def run_trial(self, trial):
+                try:
+                    self.trial_times.append(time.time)
+                except:
+                    self.trial_times = [time.time()]
                 mean_metric, history = cross_validation(self.hypermodel.build, trial.hyperparameters, 5, omni_params, cb)
                 self.oracle.update_trial(trial.trial_id, {'val_auc': mean_metric})
                 self.save_model(trial.trial_id, history.model)
+                try:
+                    self.n +=1
+                except:
+                    self.n = 1
+                for file in os.listdir():
+                    if 'status' in file:
+                        os.remove(file)
+                self.trial_times[-1] = time.time()-self.trial_times[-1]
+                os.mknod(f'status - step {self._reported_step} of {self.remaining_trials} - time - {np.mean(self.trial_times)}')
 
         return bayes(builder, objective, max_trials, num_initial_points=10)
 
