@@ -1,0 +1,2 @@
+ID,target_tickers,tickers,n_tickers,foresight,hindsight,buy_threshold,sell_threshold,interval,validation_accuracy
+1,['MSFT'],MSFT,1,32,256,0.01,None,5T,0.60660535
