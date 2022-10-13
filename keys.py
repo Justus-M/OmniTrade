@@ -1,0 +1,1 @@
+my_alpha_vantage_key = '82Q2JYA7VUSB379H'
