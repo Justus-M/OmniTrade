@@ -3,6 +3,7 @@ import os
 import csv
 import pandas as pd
 import io
+from params import *
 
 
 def reversed_lines(file):
@@ -39,5 +40,18 @@ def csv_end_reader(path, lines, Processed = False):
         out = pd.DataFrame(out, columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']).set_index('timestamp')
 
     return out[::-1]
+
+def prepare_stock_df(ticker: str, params: Params):
+    # raw_frame = pq.ParquetDataset('/users/justusmulli/projects/omnitrade/aws/aapl').read().to_pandas()
+    # raw_frame.set_index('time', inplace = True)
+    # raw_frame.index = pd.to_datetime(raw_frame.index)
+    raw_frame = pd.read_csv(f'{str(params.data_path)}/{ticker}.csv', header=0, index_col='timestamp',
+                            parse_dates=True)
+    raw_frame.columns = ticker + ' ' + raw_frame.columns.values
+    raw_frame.index = pd.to_datetime(raw_frame.index, unit='s')
+    raw_frame = raw_frame.resample(params.hindsight_interval).mean()
+    raw_frame.dropna(inplace=True)
+    return raw_frame
+
 
 

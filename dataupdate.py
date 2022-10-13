@@ -80,19 +80,3 @@ def last_market_open():
         LastOpen = now
     return LastOpen, EOD, now
 
-if __name__ == '__main__':
-
-    while True:
-        LastOpen, EOD, now = last_market_open()
-
-        while LastOpen == now:
-            t.sleep(3600)
-            LastOpen, EOD, now = last_market_open()
-
-        alphavantage_update()
-
-        LastOpen, EOD, now = last_market_open()
-
-        while LastOpen != now:
-            t.sleep(3600)
-            LastOpen, EOD, now = last_market_open()

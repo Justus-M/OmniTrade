@@ -1,0 +1,45 @@
+---
+name: 'Omnitrade parameters'
+class Params:
+    target_tickers: list[str] = field(default_factory = ['MSFT'])  ### tickers of stocks to generate signals for. Matching file must be in the Data/Minute folder
+    tickers: list[str] = field(default_factory = ['MSFT'])  ### tickers of stocks to use for prediction. ex. ['MSFT', 'AAPL'] Means Microsoft and Apple stock will be used to explain price movements of target_tickers above
+    year_cutoff: int = 2010  ## earliest year from which training data should start. By using 2010 the recession of 2007-2009 is excluded.
+    hindsight: int = 256  ## number of time interval periods behind used to explain price movements. Ex. with 5T (5 minute) interval, we look at the last 256 5-minute intervals to predict the future.
+    hindsight_interval: str = '30T'  ## time period interval of data to use - in line with Pandas convention - T for minutes, D for days
+    foresight: int = 32  ## number of time interval periods ahead for prediction. ex. 32 with 5T interval means we look 32*5 = 160 minutes ahead
+    buy_threshold: float = 0.02  ## 0-0.99   minimum price increase for a buy signal. Ex. 0.01 means we generate a buy signal for a price increase of at least 1% after the foresight period
+    sell_threshold: Optional[float] = None  ## None or 0-0.99    minimum price decrease for a short signal
+    data_path: str = 'Data/Minute'  ## Path where your market data is stored. Should be stored as 'ticker.csv' ex. 'MSFT.csv'
+    validation_proportion: float = 0.2  ## Proportion of data to use for model validation
+    test_proportion: float = 0  ## Proportion of data to use for model testing
+    epochs: int = 20  ## number of neural network training epochs
+    batch_size: int = 256  ## batch size for neural network training
+    bayesian_initial_points: int = 5
+    bayesian_iterations: int = 20
+    ### Input Parameters above
+
+    ### Do not modify below
+
+    displace: int = 2
+
+
+    omni_params['hindsight_extension'] = None  # [1, 2, 3, 4, 8]
+    omni_params['purpose'] = 'training'
+    omni_params['test_proportion'] = 0.2
+
+    for ticker in omni_params['target_tickers']:
+        if ticker not in omni_params['tickers']:
+            omni_params['tickers'].append(ticker)
+
+    omni_params['target_tickers'].sort()
+    omni_params['tickers'].sort()
+    count = len(omni_params['target_tickers'])
+    omni_params['label_count'] = count * omni_params['displace'] + 1
+    omni_params['price_count'] = count * 2
+
+    omni_params['specs'] = {}
+    for key in ['foresight', 'hindsight', 'buy_threshold', 'sell_threshold', 'hindsight_interval']:
+        omni_params['specs'][key] = str(omni_params[key])
+    omni_params['specs']['n_tickers'] = str(len(omni_params['tickers']))
+    omni_params['specs']['n_target_tickers'] = str(len(omni_params['target_tickers']))
+...

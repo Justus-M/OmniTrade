@@ -13,6 +13,12 @@ for file in [f for f in os.listdir() if 'US1' in f]:
 all_data['timestamp'] = list(map(lambda x : str(x)[:4]+'-'+str(x)[4:6]+'-'+str(x)[6:],  all_data.DATE))
 all_data.timestamp = all_data.timestamp + ' '
 all_data.timestamp = all_data.timestamp + \
-                     list(map(lambda x: str(x).replace('94500', '094500')[:2]+
-                                        ':'+str(x).replace('94500', '094500')[2:4]+
-                                        ':'+str(x).replace('94500', '094500')[4:], all_data.TIME))
+                     list(map(lambda x: str(x).replace('94500', '094500')[:2] +
+                                        ':' + str(x).replace('94500', '094500')[2:4] +
+                                        ':' + str(x).replace('94500', '094500')[4:], all_data.TIME))
+all_data.columns = list(map(lambda x: x.lower(), all_data.columns))
+all_data.drop(columns = ['date', 'time', 'per', 'ticker'], inplace=True)
+all_data.rename(columns={'vol': 'volume'}, inplace = True)
+all_data = all_data[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+all_data = all_data.sort_values('timestamp')
+all_data.to_csv('/Users/justusmulli/Projects/OmniTrade/Data/Minute/SPY.csv', index = None)
