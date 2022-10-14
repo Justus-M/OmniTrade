@@ -92,8 +92,8 @@ class bayes(kt.tuners.bayesian.BayesianOptimization):
             self.n = 1
 
         self.trial_times[-1] = time.time()-self.trial_times[-1]
-        if os.path.isdir("/content/gdrive"):
-            if os.path.isdir("/content/gdrive/untitled_project"):
-                shutil.rmtree("/content/gdrive/untitled_project")
-            shutil.copytree("untitled_project", "/content/gdrive/untitled_project")
+        if os.path.isdir("/content/gdrive/MyDrive"):
+            if os.path.isdir("/content/gdrive/MyDrive/untitled_project"):
+                shutil.rmtree("/content/gdrive/MyDrive/untitled_project")
+            shutil.copytree("untitled_project", "/content/gdrive/MyDrive/untitled_project")
         #open(f'status - step {self._reported_step} of {self.remaining_trials} - time - {np.mean(self.trial_times)}', 'w').close()
