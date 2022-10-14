@@ -16,7 +16,7 @@ class MarketForecastNN:
     def __init__(self):
         print('initializing model class')
         self.params = Params()
-        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=50, overwrite=True)
+        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=50)
 
 
 
@@ -78,7 +78,7 @@ class bayes(kt.tuners.bayesian.BayesianOptimization):
 
         cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5,
                                               restore_best_weights=True)
-        history = self.hypermodel.build(trial.hyperparameters).fit(data.training_data, epochs=50,
+        history = self.hypermodel.build(trial.hyperparameters).fit(data.training_data, epochs=100,
                             validation_data=data.validation_data, use_multiprocessing=True,
                             workers=16, callbacks = [cb])
         if K.backend() == 'tensorflow':
