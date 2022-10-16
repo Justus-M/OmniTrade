@@ -16,7 +16,7 @@ class OmniTrade:
 
     def get_test_predictions(self):
         predictions = self.model.model.predict(self.data.test_data)
-        self.test_frame = self.data.data_frame[self.data.test_cutoff:].iloc[:len(predictions)]
+        self.test_frame = self.data.data_frame[self.data.test_cutoff:].iloc[:len(predictions):-1]
         self.test_frame[['predicted spike', 'predicted drawdown']] = predictions
 
 

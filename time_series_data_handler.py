@@ -64,6 +64,12 @@ class TimeSeriesDataHandler:
         self.data_frame = self.data_frame.merge(price, how='inner', left_index=True, right_index=True)
         self.data_frame = self.data_frame.merge(target_price, how='inner', left_index=True, right_index=True)
         self.data_frame = self.data_frame.iloc[self.params.foresight:]
+        self.data_frame['day'] = self.data_frame.index.day
+        self.data_frame['month'] = self.data_frame.index.month
+        self.data_frame['year'] = self.data_frame.index.month
+        self.data_frame['weekday'] = self.data_frame.index.weekday
+
+        self.data_frame['minute'] = ((self.data_frame.index.hour-9)*60)+self.data_frame.index.minute-30
         self.data_frame.dropna(inplace=True)
 
     def scale_x_variables(self):
@@ -71,6 +77,9 @@ class TimeSeriesDataHandler:
 
         labels = self.data_frame[col_names[-(self.params.label_count + 3):]].copy()
         x_variables = self.data_frame[col_names[:-(self.params.label_count + 3)]].copy()
+        for col in [c for c in x_variables.columns if c in ['open', 'high', 'low', 'close', 'volume']]:
+            x_variables[col] = x_variables[col]/x_variables[col].shift(periods=-1)
+        x_variables.dropna(inplace=True)
         x_variables = x_variables.apply(lambda x: preprocessing.scale(x), axis=0)
 
         self.data_frame = x_variables.merge(labels, how='inner', left_index=True, right_index=True)

@@ -13,10 +13,10 @@ import os
 
 class MarketForecastNN:
 
-    def __init__(self):
+    def __init__(self, project_name='untitled_project'):
         print('initializing model class')
         self.params = Params()
-        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=50)
+        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=50, project_name=project_name)
 
 
 
@@ -76,8 +76,11 @@ class bayes(kt.tuners.bayesian.BayesianOptimization):
         except:
             self.trial_times = [time.time()]
 
-        cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5,
-                                              restore_best_weights=True)
+        cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                              patience=5,
+                                              restore_best_weights=True,
+                                              min_delta=0.0001,
+                                              )
         history = self.hypermodel.build(trial.hyperparameters).fit(data.training_data, epochs=100,
                             validation_data=data.validation_data, use_multiprocessing=True,
                             workers=16, callbacks = [cb])
@@ -93,7 +96,7 @@ class bayes(kt.tuners.bayesian.BayesianOptimization):
 
         self.trial_times[-1] = time.time()-self.trial_times[-1]
         if os.path.isdir("/content/gdrive/MyDrive"):
-            if os.path.isdir("/content/gdrive/MyDrive/untitled_project"):
-                shutil.rmtree("/content/gdrive/MyDrive/untitled_project")
-            shutil.copytree("untitled_project", "/content/gdrive/MyDrive/untitled_project")
+            if os.path.isdir(f"/content/gdrive/MyDrive/{self.project_name}"):
+                shutil.rmtree(f"/content/gdrive/MyDrive/{self.project_name}")
+            shutil.copytree(f"{self.project_name}", f"/content/gdrive/MyDrive/{self.project_name}")
         #open(f'status - step {self._reported_step} of {self.remaining_trials} - time - {np.mean(self.trial_times)}', 'w').close()
