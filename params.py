@@ -21,12 +21,12 @@ class Params:
     year_cutoff: int = 2000
     # number of time interval periods behind used to explain price movements. Ex. with 5T (5 minute) interval,
     # we look at the last 256 5-minute intervals to predict the future.
-    hindsight: int = 800
+    hindsight: int = 1200
     # time period interval of data to use - in line with Pandas convention - T for minutes, D for days
     hindsight_interval: str = '30T'
     # number of time interval periods ahead for prediction.
     # ex. 32 with 5T interval means we look 32*5 = 160 minutes ahead
-    foresight: int = 320
+    foresight: int = 150
     # 0-0.99   minimum price increase for a buy signal.
     # Ex. 0.01 means we generate a buy signal for a price increase of at least 1% after the foresight period
     buy_threshold: float = 0.02

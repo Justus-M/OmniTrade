@@ -67,8 +67,7 @@ class MarketForecastNN:
 class bayes(kt.tuners.bayesian.BayesianOptimization):
 
     def run_trial(self, trial):
-        print(f'running trial: {trial.trial_id}')
-        print(f'running trial: {trial.hyperparameters.values}')
+
 
         data = TimeSeriesDataHandler(Params())
         try:
