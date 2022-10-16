@@ -77,7 +77,7 @@ class TimeSeriesDataHandler:
 
         labels = self.data_frame[col_names[-(self.params.label_count + 3):]].copy()
         x_variables = self.data_frame[col_names[:-(self.params.label_count + 3)]].copy()
-        for col in [c for c in x_variables.columns if c in ['open', 'high', 'low', 'close', 'volume']]:
+        for col in [c for c in x_variables.columns if any([c in a for a in ['open', 'high', 'low', 'close', 'volume']])]:
             x_variables[col] = x_variables[col]/x_variables[col].shift(periods=-1)
         x_variables.dropna(inplace=True)
         x_variables = x_variables.apply(lambda x: preprocessing.scale(x), axis=0)
