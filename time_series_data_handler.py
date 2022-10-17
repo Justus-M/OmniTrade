@@ -53,7 +53,11 @@ class TimeSeriesDataHandler:
     def create_target_variables(self):
         target_price = pd.DataFrame(index=self.data_frame.index)
         price = pd.DataFrame(index=self.data_frame.index)
-
+        self.data_frame['day'] = self.data_frame.index.day
+        self.data_frame['month'] = self.data_frame.index.month
+        self.data_frame['year'] = self.data_frame.index.month
+        self.data_frame['weekday'] = self.data_frame.index.weekday
+        self.data_frame['minute'] = ((self.data_frame.index.hour - 9) * 60) + self.data_frame.index.minute - 30
         for ticker in self.params.target_tickers:
             target_price[ticker + ' upper_target'] = self.data_frame.apply(lambda x: self.data_frame.loc[x.name:].iloc[:self.params.foresight][ticker + ' close'].max(), axis=1)
             target_price[ticker + ' lower_target'] = self.data_frame.apply(lambda x: self.data_frame.loc[x.name:].iloc[:self.params.foresight][ticker + ' close'].min(), axis=1)
@@ -64,12 +68,6 @@ class TimeSeriesDataHandler:
         self.data_frame = self.data_frame.merge(price, how='inner', left_index=True, right_index=True)
         self.data_frame = self.data_frame.merge(target_price, how='inner', left_index=True, right_index=True)
         self.data_frame = self.data_frame.iloc[self.params.foresight:]
-        self.data_frame['day'] = self.data_frame.index.day
-        self.data_frame['month'] = self.data_frame.index.month
-        self.data_frame['year'] = self.data_frame.index.month
-        self.data_frame['weekday'] = self.data_frame.index.weekday
-
-        self.data_frame['minute'] = ((self.data_frame.index.hour-9)*60)+self.data_frame.index.minute-30
         self.data_frame.dropna(inplace=True)
 
     def scale_x_variables(self):

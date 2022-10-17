@@ -58,7 +58,7 @@ class MarketForecastNN:
 
     def train_model(self, data):
         self.model = self.build_model(kt.HyperParameters())
-        self.model.fit(data.training_data, epochs=100,
+        self.model.fit(data.training_data, epochs=1,
                             validation_data=data.validation_data, use_multiprocessing=True,
                             workers=16)
 
