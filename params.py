@@ -26,7 +26,7 @@ class Params:
     hindsight_interval: str = '30T'
     # number of time interval periods ahead for prediction.
     # ex. 32 with 5T interval means we look 32*5 = 160 minutes ahead
-    foresight: int = 13
+    foresight: int = 150
     # 0-0.99   minimum price increase for a buy signal.
     # Ex. 0.01 means we generate a buy signal for a price increase of at least 1% after the foresight period
     buy_threshold: float = 0.02
