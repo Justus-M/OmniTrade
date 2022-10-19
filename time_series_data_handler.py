@@ -59,9 +59,9 @@ class TimeSeriesDataHandler:
         self.data_frame['minute'] = ((self.data_frame.index.hour - 9) * 60) + self.data_frame.index.minute - 30
         for ticker in self.params.target_tickers:
             target_price[ticker + ' upper_target'] = self.data_frame.apply(lambda x: self.data_frame.loc[x.name:].iloc[:self.params.foresight][ticker + ' close'].max(), axis=1)
-            target_price[ticker + ' lower_target'] = self.data_frame.apply(lambda x: self.data_frame.loc[x.name:].iloc[:self.params.foresight][ticker + ' close'].min(), axis=1)
+            #target_price[ticker + ' lower_target'] = self.data_frame.apply(lambda x: self.data_frame.loc[x.name:].iloc[:self.params.foresight][ticker + ' close'].min(), axis=1)
             self.data_frame[ticker + ' max_return'] = ((target_price[ticker + ' upper_target'] / self.data_frame[ticker + ' close'])-1)*100
-            self.data_frame[ticker + ' max_drawdown'] = ((target_price[ticker + ' lower_target'] / self.data_frame[ticker + ' close'])-1)*100
+            #self.data_frame[ticker + ' max_drawdown'] = ((target_price[ticker + ' lower_target'] / self.data_frame[ticker + ' close'])-1)*100
             price[ticker + ' Price'] = self.data_frame[ticker + ' close']
 
         self.data_frame = self.data_frame.merge(price, how='inner', left_index=True, right_index=True)
@@ -72,8 +72,8 @@ class TimeSeriesDataHandler:
     def scale_x_variables(self):
         col_names = self.data_frame.columns.values
 
-        labels = self.data_frame[col_names[-(self.params.label_count + 3):]].copy()
-        x_variables = self.data_frame[col_names[:-(self.params.label_count + 3)]].copy()
+        labels = self.data_frame[col_names[-(self.params.label_count + 2):]].copy()
+        x_variables = self.data_frame[col_names[:-(self.params.label_count + 2)]].copy()
         for col in [c for c in x_variables.columns if any([c in a for a in ['open', 'high', 'low', 'close', 'volume']])]:
             x_variables[col] = x_variables[col]/x_variables[col].shift(periods=-1)
         x_variables.dropna(inplace=True)
