@@ -16,7 +16,7 @@ class ActivationFunction(Enum):
 @dataclass()
 class Params:
     _target_tickers: list = field(default_factory=lambda: ['SPY'])
-    _tickers: list = field(default_factory=lambda: ['SPY'])
+    _tickers: list = field(default_factory=lambda: ['SPY', 'NASDAQ'])
     # earliest year from which training data should start. By using 2010 the recession of 2007-2009 is excluded.
     year_cutoff: int = 2000
     # number of time interval periods behind used to explain price movements. Ex. with 5T (5 minute) interval,
