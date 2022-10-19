@@ -55,7 +55,6 @@ class TimeSeriesDataHandler:
         price = pd.DataFrame(index=self.data_frame.index)
         self.data_frame['day'] = self.data_frame.index.day
         self.data_frame['month'] = self.data_frame.index.month
-        self.data_frame['year'] = self.data_frame.index.month
         self.data_frame['weekday'] = self.data_frame.index.weekday
         self.data_frame['minute'] = ((self.data_frame.index.hour - 9) * 60) + self.data_frame.index.minute - 30
         for ticker in self.params.target_tickers:
@@ -109,7 +108,10 @@ class TimeSeriesDataHandler:
         self.data_frame = self.data_frame.merge(trail, how='inner', left_index=True, right_index=True)
 
     def window(self, tf_dataset, predict=False):
-        tf_dataset = tf_dataset.window(self.params.hindsight, 1, 1, True)
+        shift = 1
+        if not predict:
+            shift = 4
+        tf_dataset = tf_dataset.window(self.params.hindsight, shift, 1, True)
 
         if not predict:
             tf_dataset = tf_dataset.interleave(lambda x, y: tf.data.Dataset.zip((x.batch(self.params.hindsight), y)),
