@@ -15,8 +15,8 @@ class ActivationFunction(Enum):
 
 @dataclass()
 class Params:
-    _target_tickers: list = field(default_factory=lambda: ['SPY'])
-    _tickers: list = field(default_factory=lambda: ['SPY', 'NASDAQ'])
+    _target_tickers: list = field(default_factory=lambda: ['BTC'])
+    _tickers: list = field(default_factory=lambda: ['SPY', 'NASDAQ', 'ETH', 'BTC'])
     # earliest year from which training data should start. By using 2010 the recession of 2007-2009 is excluded.
     year_cutoff: int = 2000
     # number of time interval periods behind used to explain price movements. Ex. with 5T (5 minute) interval,
@@ -26,7 +26,7 @@ class Params:
     hindsight_interval: str = '30T'
     # number of time interval periods ahead for prediction.
     # ex. 32 with 5T interval means we look 32*5 = 160 minutes ahead
-    foresight: int = 150
+    foresight: int = 48
     # 0-0.99   minimum price increase for a buy signal.
     # Ex. 0.01 means we generate a buy signal for a price increase of at least 1% after the foresight period
     buy_threshold: float = 0.02
