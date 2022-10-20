@@ -14,9 +14,18 @@ class TimeSeriesDataHandler:
         self.prepare_df()
 
     def prepare_df(self):
+        start_date = None
+        end_date = None
         for ticker in self.params.tickers:
             raw_frame = self.ingestion_and_preprocessing(ticker)
+            if start_date is None:
+                start_date = min(raw_frame.index)
+                end_date = max(raw_frame.index)
+            else:
+                start_date = min([min(raw_frame.index), start_date])
+                end_date = max([max(raw_frame.index), end_date])
             self.append_data(raw_frame)
+        self.data_frame = self.data_frame.loc[start_date:end_date]
         self.feature_engineering()
 
     def ingestion_and_preprocessing(self, ticker: str):
@@ -36,7 +45,11 @@ class TimeSeriesDataHandler:
     def append_data(self, raw_frame):
         # pull out into omni data class
         if self.data_frame is not None:
-            self.data_frame = self.data_frame.merge(raw_frame, how='inner', left_index=True, right_index=True)
+            if 'BTC' in self.params.tickers and 'SPY' in self.params.tickers:
+                self.data_frame = self.data_frame.merge(raw_frame, how='outer', left_index=True, right_index=True)
+                self.data_frame.fillna(method='ffill', inplace=True)
+            else:
+                self.data_frame = self.data_frame.merge(raw_frame, how='inner', left_index=True, right_index=True)
         else:
             self.data_frame = raw_frame
 
