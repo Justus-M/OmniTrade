@@ -84,7 +84,7 @@ The `bayes_optimization` function uses the pbounds dictionary from the `params.p
 
 After training, if the accuracy beats the previous best for the same model specifications (hindsight, foresight, stock tickers etc.), or a model with the same specifications has not yet been saved, the model is saved and model details are added to `Model_Index.csv`
 
-For more information contact justus.mulli@icloud.com
+For more information contact justusmulli@icloud.com
  
  
 
