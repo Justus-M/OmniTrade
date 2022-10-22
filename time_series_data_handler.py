@@ -128,7 +128,7 @@ class TimeSeriesDataHandler:
 
         if not predict:
             tf_dataset = tf_dataset.interleave(lambda x, y: tf.data.Dataset.zip((x.batch(self.params.hindsight), y)),
-                                               num_parallel_calls=tf.data.AUTOTUNE).shuffle(100000)
+                                               num_parallel_calls=tf.data.AUTOTUNE).shuffle(100000, seed=42)
         else:
             tf_dataset = tf_dataset.interleave(lambda x, _: tf.data.Dataset.zip(x.batch(self.params.hindsight)),
                                                num_parallel_calls=tf.data.AUTOTUNE
