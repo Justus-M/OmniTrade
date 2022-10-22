@@ -13,10 +13,10 @@ import os
 
 class MarketForecastNN:
 
-    def __init__(self, project_name='untitled_project'):
+    def __init__(self, project_name='untitled_project', max_trials=50):
         print('initializing model class')
         self.params = Params()
-        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=50, project_name=project_name)
+        self.tuner = bayes(self.build_model, objective='val_loss', max_trials=max_trials, project_name=project_name)
 
 
 
@@ -31,7 +31,7 @@ class MarketForecastNN:
                 model.add(BatchNormalization())
 
         model.add(LSTM(hp.Int('Final_LSTM_Nodes', 4, 24, step=4, default=8), activation='tanh'))
-        model.add(Dropout(hp.Float('Final_LSTM_dropout', min_value= 0.1, max_value=0.7, default=0.4)))
+        model.add(Dropout(hp.Float('Final_LSTM_dropout', min_value=0.1, max_value=0.7, default=0.4)))
         if hp.Boolean('Final_LSTM_batch_norm', default=True):
             model.add(BatchNormalization())
 
@@ -53,8 +53,6 @@ class MarketForecastNN:
 
     def bayesian_search(self, data):
         self.tuner.search()
-        self.tuner.get_best_models(1)
-        self.model = self.tuner.get_best_models(1)[0]
 
     def train_model(self, data):
         self.model = self.build_model(kt.HyperParameters())
